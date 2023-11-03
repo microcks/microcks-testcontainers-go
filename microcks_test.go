@@ -1,8 +1,29 @@
+/*
+ * Copyright The Microcks Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package microcks
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,14 +44,87 @@ func TestMockingFunctionality(t *testing.T) {
 	})
 	// }
 
-	assertConfigRetrieval(t, ctx, microcksContainer)
+	// Loading artifacts
+	status, err := microcksContainer.ImportAsMainArtifact("test-resources/apipastries-openapi.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	require.Equal(t, http.StatusCreated, status)
+
+	status, err = microcksContainer.ImportAsSecondaryArtifact("test-resources/apipastries-postman-collection.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	require.Equal(t, http.StatusCreated, status)
+
+	testConfigRetrieval(t, ctx, microcksContainer)
+	testMockEndpoints(t, ctx, microcksContainer)
+
+	readCloser, err := microcksContainer.Logs(ctx)
+	// example to read data
+	buf := new(bytes.Buffer)
+
+	numOfByte, err := buf.ReadFrom(readCloser)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	readCloser.Close()
+
+	content := buf.String()
+	fmt.Printf("Read: %d bytes, content is: %q\r\n", numOfByte, content)
+
+	testMicrocksMockingFunctionality(t, ctx, microcksContainer)
 }
 
-func assertConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
 	// HttpEndpoint {
 	uri := microcksContainer.HttpEndpoint(ctx)
 	resp, err := http.Get(uri + "/api/keycloak/config")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	// }
+}
+
+func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+	// RestMockEndpoint {
+	baseApiUrl := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/rest/API Pastries/0.0.1", baseApiUrl)
+	// }
+}
+
+func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+	baseApiUrl := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+
+	resp, err := http.Get(baseApiUrl + "/pastries/Millefeuille")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// Unmarshal body using a generic interface
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var pastry = map[string]string{}
+	json.Unmarshal([]byte(body), &pastry)
+
+	require.Equal(t, "Millefeuille", pastry["name"])
+
+	// Check that mock from secondary artifact has been loaded.
+	resp, err = http.Get(baseApiUrl + "/pastries/Eclair Chocolat")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// Unmarshal body using a generic interface
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	pastry = map[string]string{}
+	json.Unmarshal([]byte(body), &pastry)
+
+	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }

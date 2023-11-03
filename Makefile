@@ -12,7 +12,7 @@ test-%:
 	@echo "Running $* tests..."
 	gotestsum \
 		--format short-verbose \
-		--rerun-fails=5 \
+		--rerun-fails=1 \
 		--packages="./..." \
 		--junitfile TEST-$*.xml \
 		-- \
