@@ -35,7 +35,7 @@ You just have to specify the container image you'd like to use. This library req
 
 ```go
 import (
-	microcks "github.com/microcks/microcks-testcontainers-go"
+    microcks "github.com/microcks/microcks-testcontainers-go"
 )
 
 microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
@@ -85,7 +85,7 @@ you can launch a Microcks contract/conformance test using the local server port 
 ```go
 import (
     client "github.com/microcks/microcks-go-client"
-	microcks "github.com/microcks/microcks-testcontainers-go"
+    microcks "github.com/microcks/microcks-testcontainers-go"
 )
 
 // Build a new TestRequest.
