@@ -221,8 +221,11 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 
 	require.False(t, testResult.Success)
 	require.Equal(t, "http://bad-impl:3001", testResult.TestedEndpoint)
-	//require.Equal(t, 3, testResult.TestCaseResults.size)
-	//require.True(t, testResult.TestCaseResults[0].T)
+
+	require.Equal(t, 3, len(*testResult.TestCaseResults))
+	for _, r := range *testResult.TestCaseResults {
+		require.False(t, r.Success)
+	}
 
 	// Switch endpoint to the correct implementation.
 	testRequest = client.TestRequest{
@@ -239,6 +242,11 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 
 	require.True(t, testResult.Success)
 	require.Equal(t, "http://good-impl:3002", testResult.TestedEndpoint)
+
+	require.Equal(t, 3, len(*testResult.TestCaseResults))
+	for _, r := range *testResult.TestCaseResults {
+		require.True(t, r.Success)
+	}
 }
 
 func customizeMicrocksContainer(image string, network string) testcontainers.CustomizeRequestOption {
