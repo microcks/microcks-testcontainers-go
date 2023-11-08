@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -226,6 +227,9 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 	for _, r := range *testResult.TestCaseResults {
 		require.False(t, r.Success)
 	}
+
+	t0 := (*testResult.TestCaseResults)[0].TestStepResults
+	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
 
 	// Switch endpoint to the correct implementation.
 	testRequest = client.TestRequest{
