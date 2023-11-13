@@ -29,9 +29,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	client "github.com/microcks/microcks-go-client"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	client "microcks.io/go-client"
 )
 
 func TestMockingFunctionality(t *testing.T) {

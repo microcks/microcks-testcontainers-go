@@ -1,11 +1,11 @@
-module github.com/microcks/microcks-testcontainers-go
+module microcks.io/testcontainers-go
 
 go 1.21.3
 
 require (
-	github.com/microcks/microcks-go-client v0.0.0-20231102173936-0ce927376bbf
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
+	microcks.io/go-client v0.1.0
 )
 
 require (

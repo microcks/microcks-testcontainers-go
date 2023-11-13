@@ -213,3 +213,9 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C
 gopkg.in/yaml.v3 v3.0.0/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+microcks.io/go-client v0.0.0-20231102173936-0ce927376bbf h1:j3MUXkg3/8XnhuRTrXZ+lGyC/L4YEp4CIcVTyJxLs/A=
+microcks.io/go-client v0.0.0-20231102173936-0ce927376bbf/go.mod h1:I29ll80cA2Pu/08mcoF5sWTPmao2VMGzvddzqlqwKto=
+microcks.io/go-client v0.0.0-20231113112647-62fca66c5c37 h1:OBul5an951nNBY3D5FUyVg4w/2iUUu0oehECQJxKgq0=
+microcks.io/go-client v0.0.0-20231113112647-62fca66c5c37/go.mod h1:eW+W5KdkmSjQXSU15BZHvdnWal0Ky/KJJSHCXZv6+eo=
+microcks.io/go-client v0.1.0 h1:7y2kyckuNcyG0mA/A4XTY4PXA79PIWkBEAWcAdEnhMg=
+microcks.io/go-client v0.1.0/go.mod h1:eW+W5KdkmSjQXSU15BZHvdnWal0Ky/KJJSHCXZv6+eo=

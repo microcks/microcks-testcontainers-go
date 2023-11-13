@@ -9,9 +9,9 @@ Go library for Testcontainers that enables embedding Microcks into your Go unit 
 
 ## Build Status
 
-Latest released version is `0.1.0`.
+Latest released version is `v0.1.0`.
 
-Current development version is `0.2.0`.
+Current development version is `v0.2.0`.
 
 ## How to use it?
 
@@ -20,13 +20,13 @@ Current development version is `0.2.0`.
 To get the latest version, use go1.21+ and fetch using the `go get` command. For example:
 
 ```
-go get github.com/microcks/microcks-testcontainers-go@latest
+go get microcks.io/testcontainers-go@latest
 ```
 
 To get a specific version, use go1.21+ and fetch the desired version using the `go get` command. For example:
 
 ```
-go get github.com/microcks/microcks-testcontainers-got@v0.1.0
+go get microcks.io/testcontainers-go@v0.1.0
 ```
 
 ### Startup the container
@@ -35,7 +35,7 @@ You just have to specify the container image you'd like to use. This library req
 
 ```go
 import (
-    microcks "github.com/microcks/microcks-testcontainers-go"
+    microcks "microcks.io/testcontainers-go"
 )
 
 microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
@@ -84,8 +84,8 @@ you can launch a Microcks contract/conformance test using the local server port 
 
 ```go
 import (
-    client "github.com/microcks/microcks-go-client"
-    microcks "github.com/microcks/microcks-testcontainers-go"
+    client "microcks.io/go-client"
+    microcks "microcks.io/testcontainers-go"
 )
 
 // Build a new TestRequest.
