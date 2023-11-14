@@ -208,7 +208,7 @@ func assertBadImplementation(t *testing.T, ctx context.Context, microcksContaine
 	testResult, err := microcksContainer.TestEndpoint(&testRequest)
 	require.NoError(t, err)
 
-	println(testResult.Success)
+	t.Logf("Test Result success is %t", testResult.Success)
 
 	require.False(t, testResult.Success)
 	require.Equal(t, "http://bad-impl:3001", testResult.TestedEndpoint)
@@ -235,7 +235,7 @@ func assertGoodImplementation(t *testing.T, ctx context.Context, microcksContain
 	testResult, err := microcksContainer.TestEndpoint(&testRequest)
 	require.NoError(t, err)
 
-	println(testResult.Success)
+	t.Logf("Test Result success is %t", testResult.Success)
 
 	require.True(t, testResult.Success)
 	require.Equal(t, "http://good-impl:3002", testResult.TestedEndpoint)
