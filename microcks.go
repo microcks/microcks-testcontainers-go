@@ -97,13 +97,13 @@ func (container *MicrocksContainer) GrpcMockEndpoint(ctx context.Context) string
 }
 
 // ImportAsMainArtifact imports an artifact as a primary or main one within the Microcks container.
-func (container *MicrocksContainer) ImportAsMainArtifact(artifactFilePath string) (int, error) {
-	return container.importArtifact(artifactFilePath, true)
+func (container *MicrocksContainer) ImportAsMainArtifact(ctx context.Context, artifactFilePath string) (int, error) {
+	return container.importArtifact(ctx, artifactFilePath, true)
 }
 
 // ImportAsSecondaryArtifact imports an artifact as a secondary one within the Microcks container.
-func (container *MicrocksContainer) ImportAsSecondaryArtifact(artifactFilePath string) (int, error) {
-	return container.importArtifact(artifactFilePath, false)
+func (container *MicrocksContainer) ImportAsSecondaryArtifact(ctx context.Context, artifactFilePath string) (int, error) {
+	return container.importArtifact(ctx, artifactFilePath, false)
 }
 
 // TestEndpoint launches a conformance test on an endpoint.
@@ -152,9 +152,8 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 	return nil, fmt.Errorf("couldn't launch on new test on Microcks. Please check Microcks container logs")
 }
 
-func (container *MicrocksContainer) importArtifact(artifactFilePath string, mainArtifact bool) (int, error) {
-	// Get context and retrieve API endpoint.
-	ctx := context.Background()
+func (container *MicrocksContainer) importArtifact(ctx context.Context, artifactFilePath string, mainArtifact bool) (int, error) {
+	// Retrieve API endpoint.
 	httpEndpoint := container.HttpEndpoint(ctx)
 
 	// Create Microcks client.

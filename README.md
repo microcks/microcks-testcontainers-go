@@ -49,12 +49,12 @@ Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-
 You have do it once the container is running:
 
 ```go
-status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
+status, err := microcksContainer.ImportAsMainArtifact(context.Background(), "testdata/apipastries-openapi.yaml")
 if err != nil {
     log.Fatal(err)
 }
 
-status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
+status, err = microcksContainer.ImportAsSecondaryArtifact(context.Background(), "testdata/apipastries-postman-collection.json")
 if err != nil {
     log.Fatal(err)
 }
