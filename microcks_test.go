@@ -202,7 +202,7 @@ func assertBadImplementation(t *testing.T, ctx context.Context, microcksContaine
 		Timeout:      2000,
 	}
 
-	testResult, err := microcksContainer.TestEndpoint(&testRequest)
+	testResult, err := microcksContainer.TestEndpoint(ctx, &testRequest)
 	require.NoError(t, err)
 
 	t.Logf("Test Result success is %t", testResult.Success)
@@ -229,7 +229,7 @@ func assertGoodImplementation(t *testing.T, ctx context.Context, microcksContain
 		Timeout:      2000,
 	}
 
-	testResult, err := microcksContainer.TestEndpoint(&testRequest)
+	testResult, err := microcksContainer.TestEndpoint(ctx, &testRequest)
 	require.NoError(t, err)
 
 	t.Logf("Test Result success is %t", testResult.Success)

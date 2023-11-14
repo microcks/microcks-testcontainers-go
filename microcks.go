@@ -107,9 +107,8 @@ func (container *MicrocksContainer) ImportAsSecondaryArtifact(artifactFilePath s
 }
 
 // TestEndpoint launches a conformance test on an endpoint.
-func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest) (*client.TestResult, error) {
-	// Get context and retrieve API endpoint.
-	ctx := context.Background()
+func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testRequest *client.TestRequest) (*client.TestResult, error) {
+	// Retrieve API endpoint.
 	httpEndpoint := container.HttpEndpoint(ctx)
 
 	// Create Microcks client.

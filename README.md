@@ -96,7 +96,7 @@ testRequest := client.TestRequest{
     Timeout:      2000,
 }
 
-testResult, err := microcksContainer.TestEndpoint(&testRequest)
+testResult, err := microcksContainer.TestEndpoint(context.Background(), &testRequest)
 require.NoError(t, err)
 
 require.False(t, testResult.Success)
