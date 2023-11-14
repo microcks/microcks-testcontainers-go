@@ -76,7 +76,10 @@ func TestContractTestingFunctionality(t *testing.T) {
 		_ = network.Remove(ctx)
 	}()
 
-	microcksContainer, err := microcks.RunContainer(ctx, customizeMicrocksContainer("quay.io/microcks/microcks-uber:nightly", networkName))
+	microcksContainer, err := microcks.RunContainer(ctx,
+		testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+		withNetwork(networkName),
+	)
 	require.NoError(t, err)
 
 	badImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -237,9 +240,12 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 	}
 }
 
-func customizeMicrocksContainer(image string, network string) testcontainers.CustomizeRequestOption {
+// Deprecated: use testcontainers.WithNetwork once it's released.
+// withNetwork is a custom request option that adds a network to a container.
+// This is a temporary option until the next release of testcontainers-go, which will include
+// this option.
+func withNetwork(network string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
-		req.Image = image
 		req.Networks = []string{network}
 	}
 }
