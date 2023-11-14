@@ -136,23 +136,33 @@ func TestContractTestingFunctionality(t *testing.T) {
 }
 
 func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
-	uri := microcksContainer.HttpEndpoint(ctx)
+	uri, err := microcksContainer.HttpEndpoint(ctx)
+	require.NoError(t, err)
+
 	resp, err := http.Get(uri + "/api/keycloak/config")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
-	baseApiUrl := microcksContainer.SoapMockEndpoint(ctx, "Pastries Service", "1.0")
-	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/soap/Pastries Service/1.0", baseApiUrl)
+	endpoint, err := microcksContainer.HttpEndpoint(ctx)
+	require.NoError(t, err)
 
-	baseApiUrl = microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
-	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/rest/API Pastries/0.0.1", baseApiUrl)
+	baseApiUrl, err := microcksContainer.SoapMockEndpoint(ctx, "Pastries Service", "1.0")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/soap/Pastries Service/1.0", baseApiUrl)
 
-	baseApiUrl = microcksContainer.GrapQLMockEndpoint(ctx, "Pastries Graph", "1")
-	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/graphql/Pastries Graph/1", baseApiUrl)
+	baseApiUrl, err = microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/rest/API Pastries/0.0.1", baseApiUrl)
 
-	baseGrpcUrl := microcksContainer.GrpcMockEndpoint(ctx)
+	baseApiUrl, err = microcksContainer.GrapQLMockEndpoint(ctx, "Pastries Graph", "1")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/graphql/Pastries Graph/1", baseApiUrl)
+
+	baseGrpcUrl, err := microcksContainer.GrpcMockEndpoint(ctx)
+	require.NoError(t, err)
+
 	ip, err := microcksContainer.Host(ctx)
 	require.NoError(t, err)
 
@@ -162,7 +172,8 @@ func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *mic
 }
 
 func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
-	baseApiUrl := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	baseApiUrl, err := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
 
 	resp, err := http.Get(baseApiUrl + "/pastries/Millefeuille")
 	require.NoError(t, err)

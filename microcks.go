@@ -68,32 +68,63 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 
 // HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed
 // (you'd have to append '/api' to access APIs)
-func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) string {
-	ip, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, DefaultHttpPort)
-	return fmt.Sprintf("http://%s:%s", ip, port.Port())
+func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) (string, error) {
+	ip, err := container.Host(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	port, err := container.MappedPort(ctx, DefaultHttpPort)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("http://%s:%s", ip, port.Port()), nil
 }
 
 // SoapMockEndpoint get the exposed mock endpoint for a SOAP Service.
-func (container *MicrocksContainer) SoapMockEndpoint(ctx context.Context, service string, version string) string {
-	return fmt.Sprintf("%s/soap/%s/%s", container.HttpEndpoint(ctx), service, version)
+func (container *MicrocksContainer) SoapMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/soap/%s/%s", endpoint, service, version), nil
 }
 
 // RestMockEndpoints get the exposed mock endpoint for a REST Service.
-func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, service string, version string) string {
-	return fmt.Sprintf("%s/rest/%s/%s", container.HttpEndpoint(ctx), service, version)
+func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/rest/%s/%s", endpoint, service, version), nil
 }
 
 // GraphQLMockEndpoint get the exposed mock endpoints for a GraphQL Service.
-func (container *MicrocksContainer) GrapQLMockEndpoint(ctx context.Context, service string, version string) string {
-	return fmt.Sprintf("%s/graphql/%s/%s", container.HttpEndpoint(ctx), service, version)
+func (container *MicrocksContainer) GrapQLMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/graphql/%s/%s", endpoint, service, version), nil
 }
 
 // GrpcMockEndpoint get the exposed mock endpoint for a GRPC Service.
-func (container *MicrocksContainer) GrpcMockEndpoint(ctx context.Context) string {
-	ip, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, DefaultGrpcPort)
-	return fmt.Sprintf("grpc://%s:%s", ip, port.Port())
+func (container *MicrocksContainer) GrpcMockEndpoint(ctx context.Context) (string, error) {
+	ip, err := container.Host(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	port, err := container.MappedPort(ctx, DefaultGrpcPort)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("grpc://%s:%s", ip, port.Port()), nil
 }
 
 // ImportAsMainArtifact imports an artifact as a primary or main one within the Microcks container.
@@ -109,7 +140,10 @@ func (container *MicrocksContainer) ImportAsSecondaryArtifact(ctx context.Contex
 // TestEndpoint launches a conformance test on an endpoint.
 func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testRequest *client.TestRequest) (*client.TestResult, error) {
 	// Retrieve API endpoint.
-	httpEndpoint := container.HttpEndpoint(ctx)
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
 
 	// Create Microcks client.
 	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
@@ -154,7 +188,10 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 
 func (container *MicrocksContainer) importArtifact(ctx context.Context, artifactFilePath string, mainArtifact bool) (int, error) {
 	// Retrieve API endpoint.
-	httpEndpoint := container.HttpEndpoint(ctx)
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
 
 	// Create Microcks client.
 	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
