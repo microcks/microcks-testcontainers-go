@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package microcks
+package microcks_test
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -32,43 +30,36 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	client "microcks.io/go-client"
+	microcks "microcks.io/testcontainers-go"
 )
 
 func TestMockingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
-	// createMicrocksContainer {
-	microcksContainer, err := RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
+	microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		if err := microcksContainer.Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
-	// }
 
 	// Loading artifacts
-	status, err := microcksContainer.ImportAsMainArtifact("test-resources/apipastries-openapi.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
+	status, err := microcksContainer.ImportAsMainArtifact(ctx, filepath.Join("testdata", "apipastries-openapi.yaml"))
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
-	status, err = microcksContainer.ImportAsSecondaryArtifact("test-resources/apipastries-postman-collection.json")
-	if err != nil {
-		log.Fatal(err)
-	}
+	status, err = microcksContainer.ImportAsSecondaryArtifact(ctx, filepath.Join("testdata", "apipastries-postman-collection.json"))
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
 	testConfigRetrieval(t, ctx, microcksContainer)
 	testMockEndpoints(t, ctx, microcksContainer)
 
 	testMicrocksMockingFunctionality(t, ctx, microcksContainer)
-
-	//printMicrocksContainerLogs(ctx, microcksContainer);
 }
 
-func TestContractTestingFunctionnality(t *testing.T) {
+func TestContractTestingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
 	var networkName = "microcks-network"
@@ -77,15 +68,16 @@ func TestContractTestingFunctionnality(t *testing.T) {
 			Name: networkName,
 		},
 	})
-	if err != nil {
-		t.Fatal("Cannot create network")
-	}
+	require.NoError(t, err, "cannot create network")
+
 	defer func() {
 		_ = network.Remove(ctx)
 	}()
 
-	// createMicrocksContainer {
-	microcksContainer, err := RunContainer(ctx, customizeMicrocksContainer("quay.io/microcks/microcks-uber:nightly", networkName))
+	microcksContainer, err := microcks.RunContainer(ctx,
+		testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+		withNetwork(networkName),
+	)
 	require.NoError(t, err)
 
 	badImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -99,6 +91,8 @@ func TestContractTestingFunctionnality(t *testing.T) {
 		},
 		Started: true,
 	})
+	require.NoError(t, err)
+
 	goodImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:    "quay.io/microcks/contract-testing-demo:02",
@@ -110,6 +104,7 @@ func TestContractTestingFunctionnality(t *testing.T) {
 		},
 		Started: true,
 	})
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		if err := microcksContainer.Terminate(ctx); err != nil {
@@ -122,57 +117,63 @@ func TestContractTestingFunctionnality(t *testing.T) {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
-	// }
 
 	// Loading artifacts
-	status, err := microcksContainer.ImportAsMainArtifact("test-resources/apipastries-openapi.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
+	status, err := microcksContainer.ImportAsMainArtifact(ctx, filepath.Join("testdata", "apipastries-openapi.yaml"))
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
-	status, err = microcksContainer.ImportAsSecondaryArtifact("test-resources/apipastries-postman-collection.json")
-	if err != nil {
-		log.Fatal(err)
-	}
+	status, err = microcksContainer.ImportAsSecondaryArtifact(ctx, filepath.Join("testdata", "apipastries-postman-collection.json"))
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
 	testConfigRetrieval(t, ctx, microcksContainer)
 
-	testMicrocksContractTestingFunctionality(t, ctx, microcksContainer)
+	assertBadImplementation(t, ctx, microcksContainer)
+	assertGoodImplementation(t, ctx, microcksContainer)
 
-	printMicrocksContainerLogs(ctx, microcksContainer)
+	printMicrocksContainerLogs(t, ctx, microcksContainer)
 }
 
-func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
-	// HttpEndpoint {
-	uri := microcksContainer.HttpEndpoint(ctx)
+func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+	uri, err := microcksContainer.HttpEndpoint(ctx)
+	require.NoError(t, err)
+
 	resp, err := http.Get(uri + "/api/keycloak/config")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	// }
 }
 
-func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
-	// MockEndpoints {
-	baseApiUrl := microcksContainer.SoapMockEndpoint(ctx, "Pastries Service", "1.0")
-	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/soap/Pastries Service/1.0", baseApiUrl)
+func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+	endpoint, err := microcksContainer.HttpEndpoint(ctx)
+	require.NoError(t, err)
 
-	baseApiUrl = microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
-	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/rest/API Pastries/0.0.1", baseApiUrl)
+	baseApiUrl, err := microcksContainer.SoapMockEndpoint(ctx, "Pastries Service", "1.0")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/soap/Pastries Service/1.0", baseApiUrl)
 
-	baseApiUrl = microcksContainer.GrapQLMockEndpoint(ctx, "Pastries Graph", "1")
-	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/graphql/Pastries Graph/1", baseApiUrl)
+	baseApiUrl, err = microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/rest/API Pastries/0.0.1", baseApiUrl)
 
-	baseGrpcUrl := microcksContainer.GrpcMockEndpoint(ctx)
-	ip, _ := microcksContainer.Host(ctx)
-	port, _ := microcksContainer.MappedPort(ctx, defaultGrpcPort)
+	baseApiUrl, err = microcksContainer.GrapQLMockEndpoint(ctx, "Pastries Graph", "1")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/graphql/Pastries Graph/1", baseApiUrl)
+
+	baseGrpcUrl, err := microcksContainer.GrpcMockEndpoint(ctx)
+	require.NoError(t, err)
+
+	ip, err := microcksContainer.Host(ctx)
+	require.NoError(t, err)
+
+	port, err := microcksContainer.MappedPort(ctx, microcks.DefaultGrpcPort)
+	require.NoError(t, err)
 	require.Equal(t, "grpc://"+ip+":"+port.Port(), baseGrpcUrl)
-	// }
 }
 
-func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
-	baseApiUrl := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+	baseApiUrl, err := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
 
 	resp, err := http.Get(baseApiUrl + "/pastries/Millefeuille")
 	require.NoError(t, err)
@@ -180,9 +181,7 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 
 	// Unmarshal body using a generic interface
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err.Error())
-	}
+	require.NoError(t, err)
 
 	var pastry = map[string]string{}
 	json.Unmarshal([]byte(body), &pastry)
@@ -196,9 +195,7 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 
 	// Unmarshal body using a generic interface
 	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err.Error())
-	}
+	require.NoError(t, err)
 
 	pastry = map[string]string{}
 	json.Unmarshal([]byte(body), &pastry)
@@ -206,7 +203,8 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }
 
-func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+// assertions for the endpoint with a bad implementation
+func assertBadImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Build a new TestRequest.
 	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
@@ -215,10 +213,10 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 		Timeout:      2000,
 	}
 
-	testResult, err := microcksContainer.TestEndpoint(&testRequest)
+	testResult, err := microcksContainer.TestEndpoint(ctx, &testRequest)
 	require.NoError(t, err)
 
-	println(testResult.Success)
+	t.Logf("Test Result success is %t", testResult.Success)
 
 	require.False(t, testResult.Success)
 	require.Equal(t, "http://bad-impl:3001", testResult.TestedEndpoint)
@@ -230,19 +228,22 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 
 	t0 := (*testResult.TestCaseResults)[0].TestStepResults
 	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
+}
 
+// assertions for the endpoint with a good implementation
+func assertGoodImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Switch endpoint to the correct implementation.
-	testRequest = client.TestRequest{
+	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
 		RunnerType:   client.TestRunnerTypeOPENAPISCHEMA,
 		TestEndpoint: "http://good-impl:3002",
 		Timeout:      2000,
 	}
 
-	testResult, err = microcksContainer.TestEndpoint(&testRequest)
+	testResult, err := microcksContainer.TestEndpoint(ctx, &testRequest)
 	require.NoError(t, err)
 
-	println(testResult.Success)
+	t.Logf("Test Result success is %t", testResult.Success)
 
 	require.True(t, testResult.Success)
 	require.Equal(t, "http://good-impl:3002", testResult.TestedEndpoint)
@@ -253,22 +254,25 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 	}
 }
 
-func customizeMicrocksContainer(image string, network string) testcontainers.CustomizeRequestOption {
+// Deprecated: use testcontainers.WithNetwork once it's released.
+// withNetwork is a custom request option that adds a network to a container.
+// This is a temporary option until the next release of testcontainers-go, which will include
+// this option.
+func withNetwork(network string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
-		req.Image = image
 		req.Networks = []string{network}
 	}
 }
 
-func printMicrocksContainerLogs(ctx context.Context, microcksContainer *MicrocksContainer) {
+func printMicrocksContainerLogs(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	readCloser, err := microcksContainer.Logs(ctx)
+	require.NoError(t, err)
+
 	// example to read data
 	buf := new(bytes.Buffer)
 	numOfByte, err := buf.ReadFrom(readCloser)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	require.NoError(t, err)
+
 	readCloser.Close()
-	fmt.Printf("Read: %d bytes, content is: %q", numOfByte, buf.String())
+	t.Logf("Read: %d bytes, content is: %s", numOfByte, buf.String())
 }

@@ -18,11 +18,10 @@ package microcks
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -33,10 +32,11 @@ import (
 	client "microcks.io/go-client"
 )
 
-const defaultImage = "quay.io/microcks/microcks-uber:latest"
-
-const defaultHttpPort = "8080/tcp"
-const defaultGrpcPort = "9090/tcp"
+const (
+	defaultImage    = "quay.io/microcks/microcks-uber:latest"
+	DefaultHttpPort = "8080/tcp"
+	DefaultGrpcPort = "9090/tcp"
+)
 
 type MicrocksContainer struct {
 	testcontainers.Container
@@ -46,7 +46,7 @@ type MicrocksContainer struct {
 func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*MicrocksContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        defaultImage,
-		ExposedPorts: []string{defaultHttpPort, defaultGrpcPort},
+		ExposedPorts: []string{DefaultHttpPort, DefaultGrpcPort},
 		WaitingFor:   wait.ForLog("Started MicrocksApplication"),
 	}
 	genericContainerReq := testcontainers.GenericContainerRequest{
@@ -68,57 +68,94 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 
 // HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed
 // (you'd have to append '/api' to access APIs)
-func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) string {
-	ip, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, defaultHttpPort)
-	return fmt.Sprintf("http://%s:%s", ip, port.Port())
+func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) (string, error) {
+	ip, err := container.Host(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	port, err := container.MappedPort(ctx, DefaultHttpPort)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("http://%s:%s", ip, port.Port()), nil
 }
 
 // SoapMockEndpoint get the exposed mock endpoint for a SOAP Service.
-func (container *MicrocksContainer) SoapMockEndpoint(ctx context.Context, service string, version string) string {
-	return fmt.Sprintf("%s/soap/%s/%s", container.HttpEndpoint(ctx), service, version)
+func (container *MicrocksContainer) SoapMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/soap/%s/%s", endpoint, service, version), nil
 }
 
 // RestMockEndpoints get the exposed mock endpoint for a REST Service.
-func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, service string, version string) string {
-	return fmt.Sprintf("%s/rest/%s/%s", container.HttpEndpoint(ctx), service, version)
+func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/rest/%s/%s", endpoint, service, version), nil
 }
 
 // GraphQLMockEndpoint get the exposed mock endpoints for a GraphQL Service.
-func (container *MicrocksContainer) GrapQLMockEndpoint(ctx context.Context, service string, version string) string {
-	return fmt.Sprintf("%s/graphql/%s/%s", container.HttpEndpoint(ctx), service, version)
+func (container *MicrocksContainer) GrapQLMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/graphql/%s/%s", endpoint, service, version), nil
 }
 
 // GrpcMockEndpoint get the exposed mock endpoint for a GRPC Service.
-func (container *MicrocksContainer) GrpcMockEndpoint(ctx context.Context) string {
-	ip, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, defaultGrpcPort)
-	return fmt.Sprintf("grpc://%s:%s", ip, port.Port())
+func (container *MicrocksContainer) GrpcMockEndpoint(ctx context.Context) (string, error) {
+	ip, err := container.Host(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	port, err := container.MappedPort(ctx, DefaultGrpcPort)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("grpc://%s:%s", ip, port.Port()), nil
 }
 
 // ImportAsMainArtifact imports an artifact as a primary or main one within the Microcks container.
-func (container *MicrocksContainer) ImportAsMainArtifact(artifactFilePath string) (int, error) {
-	return container.importArtifact(artifactFilePath, true)
+func (container *MicrocksContainer) ImportAsMainArtifact(ctx context.Context, artifactFilePath string) (int, error) {
+	return container.importArtifact(ctx, artifactFilePath, true)
 }
 
 // ImportAsSecondaryArtifact imports an artifact as a secondary one within the Microcks container.
-func (container *MicrocksContainer) ImportAsSecondaryArtifact(artifactFilePath string) (int, error) {
-	return container.importArtifact(artifactFilePath, false)
+func (container *MicrocksContainer) ImportAsSecondaryArtifact(ctx context.Context, artifactFilePath string) (int, error) {
+	return container.importArtifact(ctx, artifactFilePath, false)
 }
 
 // TestEndpoint launches a conformance test on an endpoint.
-func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest) (*client.TestResult, error) {
-	// Get context and retrieve API endpoint.
-	ctx := context.Background()
-	httpEndpoint := container.HttpEndpoint(ctx)
+func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testRequest *client.TestRequest) (*client.TestResult, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
 
 	// Create Microcks client.
 	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("error creating Microcks client: %w", err)
 	}
 
 	testResult, err := c.CreateTestWithResponse(ctx, *testRequest)
+	if err != nil {
+		return nil, fmt.Errorf("error creating test with response: %w", err)
+	}
+
 	if testResult.HTTPResponse.StatusCode == 201 {
 		// Retrieve Id and start polling for final result.
 		var testResultId string = testResult.JSON201.Id
@@ -131,8 +168,9 @@ func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest
 		for nowInMilliseconds() < future {
 			testResultResponse, err := c.GetTestResultWithResponse(ctx, testResultId)
 			if err != nil {
-				log.Fatal(err)
+				return nil, fmt.Errorf("error getting test result with response: %w", err)
 			}
+
 			// If still in progress, then wait again.
 			if testResultResponse.JSON200.InProgress {
 				time.Sleep(200 * time.Millisecond)
@@ -145,24 +183,26 @@ func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest
 		response, err := c.GetTestResultWithResponse(ctx, testResultId)
 		return response.JSON200, err
 	}
-	return nil, errors.New("Couldn't launch on new test on Microcks. Please check Microcks container logs")
+	return nil, fmt.Errorf("couldn't launch on new test on Microcks. Please check Microcks container logs")
 }
 
-func (container *MicrocksContainer) importArtifact(artifactFilePath string, mainArtifact bool) (int, error) {
-	// Get context and retrieve API endpoint.
-	ctx := context.Background()
-	httpEndpoint := container.HttpEndpoint(ctx)
+func (container *MicrocksContainer) importArtifact(ctx context.Context, artifactFilePath string, mainArtifact bool) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
 
 	// Create Microcks client.
 	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error creating Microcks client: %w", err)
 	}
 
 	// Ensure file exists on fs.
 	file, err := os.Open(artifactFilePath)
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error opening artifact file: %w", err)
 	}
 	defer file.Close()
 
@@ -171,18 +211,19 @@ func (container *MicrocksContainer) importArtifact(artifactFilePath string, main
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("file", filepath.Base(artifactFilePath))
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error creating multipart form: %w", err)
 	}
+
 	_, err = io.Copy(part, file)
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error copying file to multipart form: %w", err)
 	}
 
 	// Add the mainArtifact flag to request.
 	_ = writer.WriteField("mainArtifact", strconv.FormatBool(mainArtifact))
 	err = writer.Close()
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error closing multipart form: %w", err)
 	}
 
 	response, err := c.UploadArtifactWithBody(ctx, nil, writer.FormDataContentType(), body)
