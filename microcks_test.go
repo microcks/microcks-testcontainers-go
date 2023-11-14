@@ -132,7 +132,8 @@ func TestContractTestingFunctionality(t *testing.T) {
 
 	testConfigRetrieval(t, ctx, microcksContainer)
 
-	testMicrocksContractTestingFunctionality(t, ctx, microcksContainer)
+	testBadImplementation(t, ctx, microcksContainer)
+	testGoodImplementation(t, ctx, microcksContainer)
 
 	printMicrocksContainerLogs(t, ctx, microcksContainer)
 }
@@ -194,7 +195,7 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }
 
-func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+func testBadImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Build a new TestRequest.
 	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
@@ -218,16 +219,18 @@ func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context,
 
 	t0 := (*testResult.TestCaseResults)[0].TestStepResults
 	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
+}
 
+func testGoodImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Switch endpoint to the correct implementation.
-	testRequest = client.TestRequest{
+	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
 		RunnerType:   client.TestRunnerTypeOPENAPISCHEMA,
 		TestEndpoint: "http://good-impl:3002",
 		Timeout:      2000,
 	}
 
-	testResult, err = microcksContainer.TestEndpoint(&testRequest)
+	testResult, err := microcksContainer.TestEndpoint(&testRequest)
 	require.NoError(t, err)
 
 	println(testResult.Success)
