@@ -61,7 +61,7 @@ func TestMockingFunctionality(t *testing.T) {
 	//printMicrocksContainerLogs(t, ctx, microcksContainer);
 }
 
-func TestContractTestingFunctionnality(t *testing.T) {
+func TestContractTestingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
 	var networkName = "microcks-network"
