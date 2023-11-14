@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -45,11 +46,11 @@ func TestMockingFunctionality(t *testing.T) {
 	})
 
 	// Loading artifacts
-	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
+	status, err := microcksContainer.ImportAsMainArtifact(filepath.Join("testdata", "apipastries-openapi.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
-	status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
+	status, err = microcksContainer.ImportAsSecondaryArtifact(filepath.Join("testdata", "apipastries-postman-collection.json"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
@@ -121,11 +122,11 @@ func TestContractTestingFunctionality(t *testing.T) {
 	})
 
 	// Loading artifacts
-	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
+	status, err := microcksContainer.ImportAsMainArtifact(filepath.Join("testdata", "apipastries-openapi.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
-	status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
+	status, err = microcksContainer.ImportAsSecondaryArtifact(filepath.Join("testdata", "apipastries-postman-collection.json"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
