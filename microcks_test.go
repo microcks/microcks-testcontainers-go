@@ -132,8 +132,8 @@ func TestContractTestingFunctionality(t *testing.T) {
 
 	testConfigRetrieval(t, ctx, microcksContainer)
 
-	testBadImplementation(t, ctx, microcksContainer)
-	testGoodImplementation(t, ctx, microcksContainer)
+	assertBadImplementation(t, ctx, microcksContainer)
+	assertGoodImplementation(t, ctx, microcksContainer)
 
 	printMicrocksContainerLogs(t, ctx, microcksContainer)
 }
@@ -195,7 +195,8 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }
 
-func testBadImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+// assertions for the endpoint with a bad implementation
+func assertBadImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Build a new TestRequest.
 	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
@@ -221,7 +222,8 @@ func testBadImplementation(t *testing.T, ctx context.Context, microcksContainer 
 	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
 }
 
-func testGoodImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+// assertions for the endpoint with a good implementation
+func assertGoodImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Switch endpoint to the correct implementation.
 	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
