@@ -18,7 +18,6 @@ package microcks
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -151,7 +150,7 @@ func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest
 		response, err := c.GetTestResultWithResponse(ctx, testResultId)
 		return response.JSON200, err
 	}
-	return nil, errors.New("Couldn't launch on new test on Microcks. Please check Microcks container logs")
+	return nil, fmt.Errorf("couldn't launch on new test on Microcks. Please check Microcks container logs")
 }
 
 func (container *MicrocksContainer) importArtifact(artifactFilePath string, mainArtifact bool) (int, error) {
