@@ -33,10 +33,11 @@ import (
 	client "microcks.io/go-client"
 )
 
-const defaultImage = "quay.io/microcks/microcks-uber:latest"
-
-const DefaultHttpPort = "8080/tcp"
-const DefaultGrpcPort = "9090/tcp"
+const (
+	defaultImage    = "quay.io/microcks/microcks-uber:latest"
+	DefaultHttpPort = "8080/tcp"
+	DefaultGrpcPort = "9090/tcp"
+)
 
 type MicrocksContainer struct {
 	testcontainers.Container
