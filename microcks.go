@@ -21,8 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -116,10 +116,14 @@ func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest
 	// Create Microcks client.
 	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("error creating Microcks client: %w", err)
 	}
 
 	testResult, err := c.CreateTestWithResponse(ctx, *testRequest)
+	if err != nil {
+		return nil, fmt.Errorf("error creating test with response: %w", err)
+	}
+
 	if testResult.HTTPResponse.StatusCode == 201 {
 		// Retrieve Id and start polling for final result.
 		var testResultId string = testResult.JSON201.Id
@@ -132,8 +136,9 @@ func (container *MicrocksContainer) TestEndpoint(testRequest *client.TestRequest
 		for nowInMilliseconds() < future {
 			testResultResponse, err := c.GetTestResultWithResponse(ctx, testResultId)
 			if err != nil {
-				log.Fatal(err)
+				return nil, fmt.Errorf("error getting test result with response: %w", err)
 			}
+
 			// If still in progress, then wait again.
 			if testResultResponse.JSON200.InProgress {
 				time.Sleep(200 * time.Millisecond)
@@ -157,13 +162,13 @@ func (container *MicrocksContainer) importArtifact(artifactFilePath string, main
 	// Create Microcks client.
 	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error creating Microcks client: %w", err)
 	}
 
 	// Ensure file exists on fs.
 	file, err := os.Open(artifactFilePath)
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error opening artifact file: %w", err)
 	}
 	defer file.Close()
 
@@ -172,18 +177,19 @@ func (container *MicrocksContainer) importArtifact(artifactFilePath string, main
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("file", filepath.Base(artifactFilePath))
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error creating multipart form: %w", err)
 	}
+
 	_, err = io.Copy(part, file)
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error copying file to multipart form: %w", err)
 	}
 
 	// Add the mainArtifact flag to request.
 	_ = writer.WriteField("mainArtifact", strconv.FormatBool(mainArtifact))
 	err = writer.Close()
 	if err != nil {
-		log.Fatal(err)
+		return http.StatusInternalServerError, fmt.Errorf("error closing multipart form: %w", err)
 	}
 
 	response, err := c.UploadArtifactWithBody(ctx, nil, writer.FormDataContentType(), body)
