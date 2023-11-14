@@ -36,7 +36,6 @@ import (
 func TestMockingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
-	// createMicrocksContainer {
 	microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -44,7 +43,6 @@ func TestMockingFunctionality(t *testing.T) {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
-	// }
 
 	// Loading artifacts
 	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
@@ -78,7 +76,6 @@ func TestContractTestingFunctionnality(t *testing.T) {
 		_ = network.Remove(ctx)
 	}()
 
-	// createMicrocksContainer {
 	microcksContainer, err := microcks.RunContainer(ctx, customizeMicrocksContainer("quay.io/microcks/microcks-uber:nightly", networkName))
 	require.NoError(t, err)
 
@@ -119,7 +116,6 @@ func TestContractTestingFunctionnality(t *testing.T) {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
-	// }
 
 	// Loading artifacts
 	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
@@ -138,16 +134,13 @@ func TestContractTestingFunctionnality(t *testing.T) {
 }
 
 func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
-	// HttpEndpoint {
 	uri := microcksContainer.HttpEndpoint(ctx)
 	resp, err := http.Get(uri + "/api/keycloak/config")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	// }
 }
 
 func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
-	// MockEndpoints {
 	baseApiUrl := microcksContainer.SoapMockEndpoint(ctx, "Pastries Service", "1.0")
 	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/soap/Pastries Service/1.0", baseApiUrl)
 
@@ -164,7 +157,6 @@ func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *mic
 	port, err := microcksContainer.MappedPort(ctx, microcks.DefaultGrpcPort)
 	require.NoError(t, err)
 	require.Equal(t, "grpc://"+ip+":"+port.Port(), baseGrpcUrl)
-	// }
 }
 
 func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
