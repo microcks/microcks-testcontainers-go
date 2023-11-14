@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -266,5 +265,5 @@ func printMicrocksContainerLogs(t *testing.T, ctx context.Context, microcksConta
 	require.NoError(t, err)
 
 	readCloser.Close()
-	fmt.Printf("Read: %d bytes, content is: %q", numOfByte, buf.String())
+	t.Logf("Read: %d bytes, content is: %s", numOfByte, buf.String())
 }
