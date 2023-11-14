@@ -57,8 +57,6 @@ func TestMockingFunctionality(t *testing.T) {
 	testMockEndpoints(t, ctx, microcksContainer)
 
 	testMicrocksMockingFunctionality(t, ctx, microcksContainer)
-
-	//printMicrocksContainerLogs(t, ctx, microcksContainer);
 }
 
 func TestContractTestingFunctionality(t *testing.T) {
