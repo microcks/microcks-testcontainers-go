@@ -48,13 +48,13 @@ func TestMockingFunctionality(t *testing.T) {
 	// }
 
 	// Loading artifacts
-	status, err := microcksContainer.ImportAsMainArtifact("test-resources/apipastries-openapi.yaml")
+	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
 	require.Equal(t, http.StatusCreated, status)
 
-	status, err = microcksContainer.ImportAsSecondaryArtifact("test-resources/apipastries-postman-collection.json")
+	status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,13 +125,13 @@ func TestContractTestingFunctionnality(t *testing.T) {
 	// }
 
 	// Loading artifacts
-	status, err := microcksContainer.ImportAsMainArtifact("test-resources/apipastries-openapi.yaml")
+	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
 	require.Equal(t, http.StatusCreated, status)
 
-	status, err = microcksContainer.ImportAsSecondaryArtifact("test-resources/apipastries-postman-collection.json")
+	status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
 	if err != nil {
 		log.Fatal(err)
 	}
