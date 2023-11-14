@@ -35,8 +35,8 @@ import (
 
 const defaultImage = "quay.io/microcks/microcks-uber:latest"
 
-const defaultHttpPort = "8080/tcp"
-const defaultGrpcPort = "9090/tcp"
+const DefaultHttpPort = "8080/tcp"
+const DefaultGrpcPort = "9090/tcp"
 
 type MicrocksContainer struct {
 	testcontainers.Container
@@ -46,7 +46,7 @@ type MicrocksContainer struct {
 func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*MicrocksContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        defaultImage,
-		ExposedPorts: []string{defaultHttpPort, defaultGrpcPort},
+		ExposedPorts: []string{DefaultHttpPort, DefaultGrpcPort},
 		WaitingFor:   wait.ForLog("Started MicrocksApplication"),
 	}
 	genericContainerReq := testcontainers.GenericContainerRequest{
@@ -70,7 +70,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 // (you'd have to append '/api' to access APIs)
 func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) string {
 	ip, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, defaultHttpPort)
+	port, _ := container.MappedPort(ctx, DefaultHttpPort)
 	return fmt.Sprintf("http://%s:%s", ip, port.Port())
 }
 
@@ -92,7 +92,7 @@ func (container *MicrocksContainer) GrapQLMockEndpoint(ctx context.Context, serv
 // GrpcMockEndpoint get the exposed mock endpoint for a GRPC Service.
 func (container *MicrocksContainer) GrpcMockEndpoint(ctx context.Context) string {
 	ip, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, defaultGrpcPort)
+	port, _ := container.MappedPort(ctx, DefaultGrpcPort)
 	return fmt.Sprintf("grpc://%s:%s", ip, port.Port())
 }
 

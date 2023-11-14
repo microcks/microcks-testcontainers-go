@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package microcks
+package microcks_test
 
 import (
 	"bytes"
@@ -32,13 +32,14 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	client "microcks.io/go-client"
+	microcks "microcks.io/testcontainers-go"
 )
 
 func TestMockingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
 	// createMicrocksContainer {
-	microcksContainer, err := RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
+	microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		if err := microcksContainer.Terminate(ctx); err != nil {
@@ -85,7 +86,7 @@ func TestContractTestingFunctionnality(t *testing.T) {
 	}()
 
 	// createMicrocksContainer {
-	microcksContainer, err := RunContainer(ctx, customizeMicrocksContainer("quay.io/microcks/microcks-uber:nightly", networkName))
+	microcksContainer, err := microcks.RunContainer(ctx, customizeMicrocksContainer("quay.io/microcks/microcks-uber:nightly", networkName))
 	require.NoError(t, err)
 
 	badImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -144,7 +145,7 @@ func TestContractTestingFunctionnality(t *testing.T) {
 	printMicrocksContainerLogs(ctx, microcksContainer)
 }
 
-func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// HttpEndpoint {
 	uri := microcksContainer.HttpEndpoint(ctx)
 	resp, err := http.Get(uri + "/api/keycloak/config")
@@ -153,7 +154,7 @@ func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *M
 	// }
 }
 
-func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// MockEndpoints {
 	baseApiUrl := microcksContainer.SoapMockEndpoint(ctx, "Pastries Service", "1.0")
 	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/soap/Pastries Service/1.0", baseApiUrl)
@@ -166,12 +167,12 @@ func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *Mic
 
 	baseGrpcUrl := microcksContainer.GrpcMockEndpoint(ctx)
 	ip, _ := microcksContainer.Host(ctx)
-	port, _ := microcksContainer.MappedPort(ctx, defaultGrpcPort)
+	port, _ := microcksContainer.MappedPort(ctx, microcks.DefaultGrpcPort)
 	require.Equal(t, "grpc://"+ip+":"+port.Port(), baseGrpcUrl)
 	// }
 }
 
-func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	baseApiUrl := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
 
 	resp, err := http.Get(baseApiUrl + "/pastries/Millefeuille")
@@ -206,7 +207,7 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }
 
-func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context, microcksContainer *MicrocksContainer) {
+func testMicrocksContractTestingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Build a new TestRequest.
 	testRequest := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
@@ -260,7 +261,7 @@ func customizeMicrocksContainer(image string, network string) testcontainers.Cus
 	}
 }
 
-func printMicrocksContainerLogs(ctx context.Context, microcksContainer *MicrocksContainer) {
+func printMicrocksContainerLogs(ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	readCloser, err := microcksContainer.Logs(ctx)
 	// example to read data
 	buf := new(bytes.Buffer)
