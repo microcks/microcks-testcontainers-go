@@ -21,9 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -50,15 +48,11 @@ func TestMockingFunctionality(t *testing.T) {
 
 	// Loading artifacts
 	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
 	status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
-	if err != nil {
-		log.Fatal(err)
-	}
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
 	testConfigRetrieval(t, ctx, microcksContainer)
@@ -66,7 +60,7 @@ func TestMockingFunctionality(t *testing.T) {
 
 	testMicrocksMockingFunctionality(t, ctx, microcksContainer)
 
-	//printMicrocksContainerLogs(ctx, microcksContainer);
+	//printMicrocksContainerLogs(t, ctx, microcksContainer);
 }
 
 func TestContractTestingFunctionnality(t *testing.T) {
@@ -78,9 +72,8 @@ func TestContractTestingFunctionnality(t *testing.T) {
 			Name: networkName,
 		},
 	})
-	if err != nil {
-		t.Fatal("Cannot create network")
-	}
+	require.NoError(t, err, "cannot create network")
+
 	defer func() {
 		_ = network.Remove(ctx)
 	}()
@@ -100,6 +93,8 @@ func TestContractTestingFunctionnality(t *testing.T) {
 		},
 		Started: true,
 	})
+	require.NoError(t, err)
+
 	goodImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:    "quay.io/microcks/contract-testing-demo:02",
@@ -111,6 +106,7 @@ func TestContractTestingFunctionnality(t *testing.T) {
 		},
 		Started: true,
 	})
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		if err := microcksContainer.Terminate(ctx); err != nil {
@@ -127,22 +123,18 @@ func TestContractTestingFunctionnality(t *testing.T) {
 
 	// Loading artifacts
 	status, err := microcksContainer.ImportAsMainArtifact("testdata/apipastries-openapi.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
 	status, err = microcksContainer.ImportAsSecondaryArtifact("testdata/apipastries-postman-collection.json")
-	if err != nil {
-		log.Fatal(err)
-	}
+	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
 	testConfigRetrieval(t, ctx, microcksContainer)
 
 	testMicrocksContractTestingFunctionality(t, ctx, microcksContainer)
 
-	printMicrocksContainerLogs(ctx, microcksContainer)
+	printMicrocksContainerLogs(t, ctx, microcksContainer)
 }
 
 func testConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
@@ -166,8 +158,11 @@ func testMockEndpoints(t *testing.T, ctx context.Context, microcksContainer *mic
 	require.Equal(t, microcksContainer.HttpEndpoint(ctx)+"/graphql/Pastries Graph/1", baseApiUrl)
 
 	baseGrpcUrl := microcksContainer.GrpcMockEndpoint(ctx)
-	ip, _ := microcksContainer.Host(ctx)
-	port, _ := microcksContainer.MappedPort(ctx, microcks.DefaultGrpcPort)
+	ip, err := microcksContainer.Host(ctx)
+	require.NoError(t, err)
+
+	port, err := microcksContainer.MappedPort(ctx, microcks.DefaultGrpcPort)
+	require.NoError(t, err)
 	require.Equal(t, "grpc://"+ip+":"+port.Port(), baseGrpcUrl)
 	// }
 }
@@ -181,9 +176,7 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 
 	// Unmarshal body using a generic interface
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err.Error())
-	}
+	require.NoError(t, err)
 
 	var pastry = map[string]string{}
 	json.Unmarshal([]byte(body), &pastry)
@@ -197,9 +190,7 @@ func testMicrocksMockingFunctionality(t *testing.T, ctx context.Context, microck
 
 	// Unmarshal body using a generic interface
 	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err.Error())
-	}
+	require.NoError(t, err)
 
 	pastry = map[string]string{}
 	json.Unmarshal([]byte(body), &pastry)
@@ -261,15 +252,15 @@ func customizeMicrocksContainer(image string, network string) testcontainers.Cus
 	}
 }
 
-func printMicrocksContainerLogs(ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
+func printMicrocksContainerLogs(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	readCloser, err := microcksContainer.Logs(ctx)
+	require.NoError(t, err)
+
 	// example to read data
 	buf := new(bytes.Buffer)
 	numOfByte, err := buf.ReadFrom(readCloser)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	require.NoError(t, err)
+
 	readCloser.Close()
 	fmt.Printf("Read: %d bytes, content is: %q", numOfByte, buf.String())
 }
