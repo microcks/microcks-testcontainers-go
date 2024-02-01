@@ -46,7 +46,21 @@ microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("q
 To use Microcks mocks or contract-testing features, you first need to import OpenAPI, Postman Collection, GraphQL or gRPC artifacts. 
 Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-artifacts support](https://microcks.io/documentation/using/importers/#multi-artifacts-support) for details.
 
-You have do it once the container is running:
+You can do it before starting the container using simple paths:
+
+```go
+import (
+    microcks "microcks.io/testcontainers-go"
+)
+
+microcksContainer, err := microcks.RunContainer(ctx, 
+    testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+    microcks.WithMainArtifact("testdata/apipastries-openapi.yaml"),
+    microcks.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+)
+```
+
+or once the container started using File arguments:
 
 ```go
 status, err := microcksContainer.ImportAsMainArtifact(context.Background(), "testdata/apipastries-openapi.yaml")

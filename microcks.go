@@ -38,6 +38,7 @@ const (
 	DefaultGrpcPort = "9090/tcp"
 )
 
+// MicrocksContainer represents the Microcks container type used in the module.
 type MicrocksContainer struct {
 	testcontainers.Container
 }
@@ -64,6 +65,33 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 	}
 
 	return &MicrocksContainer{Container: container}, nil
+}
+
+// WithMainArtifact provides paths to artifacts that will be imported as main or main
+// ones within the Microcks container.
+// Once it will be started and healthy.
+func WithMainArtifact(artifactFilePath string) testcontainers.CustomizeRequestOption {
+	return WithArtifact(artifactFilePath, true)
+}
+
+// WithSecondaryArtifact provides paths to artifacts that will be imported as main or main
+// ones within the Microcks container.
+// Once it will be started and healthy.
+func WithSecondaryArtifact(artifactFilePath string) testcontainers.CustomizeRequestOption {
+	return WithArtifact(artifactFilePath, false)
+}
+
+// WithArtifact provides paths to artifacts that will be imported within the Microcks container.
+// Once it will be started and healthy.
+func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostStarts: []testcontainers.ContainerHook{
+				importArtifactHook(artifactFilePath, main),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+	}
 }
 
 // HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed
@@ -184,6 +212,14 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 		return response.JSON200, err
 	}
 	return nil, fmt.Errorf("couldn't launch on new test on Microcks. Please check Microcks container logs")
+}
+
+func importArtifactHook(artifactFilePath string, mainArtifact bool) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		_, err := microcksContainer.importArtifact(ctx, artifactFilePath, mainArtifact)
+		return err
+	}
 }
 
 func (container *MicrocksContainer) importArtifact(ctx context.Context, artifactFilePath string, mainArtifact bool) (int, error) {

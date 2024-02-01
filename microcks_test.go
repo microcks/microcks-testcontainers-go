@@ -33,6 +33,27 @@ import (
 	microcks "microcks.io/testcontainers-go"
 )
 
+func TestMockingFunctionalityAtStartup(t *testing.T) {
+	ctx := context.Background()
+
+	microcksContainer, err := microcks.RunContainer(ctx,
+		testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+		microcks.WithMainArtifact("testdata/apipastries-openapi.yaml"),
+		microcks.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		if err := microcksContainer.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+
+	testConfigRetrieval(t, ctx, microcksContainer)
+	testMockEndpoints(t, ctx, microcksContainer)
+
+	testMicrocksMockingFunctionality(t, ctx, microcksContainer)
+}
+
 func TestMockingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
