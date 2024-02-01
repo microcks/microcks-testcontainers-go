@@ -60,7 +60,7 @@ microcksContainer, err := microcks.RunContainer(ctx,
 )
 ```
 
-or once the container started using File arguments:
+or once the container started using `ImportAsMainArtifact` and `ImportAsSecondaryArtifact` functions:
 
 ```go
 status, err := microcksContainer.ImportAsMainArtifact(context.Background(), "testdata/apipastries-openapi.yaml")
