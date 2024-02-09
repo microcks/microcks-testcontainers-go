@@ -1,4 +1,4 @@
-## Overview
+# Overview
 
 This document contains a list of maintainers in this repo.
 If you're interested in contributing, and becoming a maintainer, see [CONTRIBUTING](CONTRIBUTING.md).
@@ -9,6 +9,7 @@ If you're interested in contributing, and becoming a maintainer, see [CONTRIBUTI
 | ------------------ | --------------------------------------------------------- | ----------------------- |
 | Laurent Broudoux   | [lbroudoux](https://github.com/lbroudoux)                 | laurent@microcks.io     |
 | Yacine Kheddache   | [yada](https://github.com/yada)                           | yacine@microcks.io      |
+| Julien Breux       | [JulienBreux](https://github.com/JulienBreux)             | julienbreux@google.com  |
 
 ## Emeritus
 
