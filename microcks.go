@@ -48,7 +48,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 	req := testcontainers.ContainerRequest{
 		Image:        defaultImage,
 		ExposedPorts: []string{DefaultHttpPort, DefaultGrpcPort},
-		WaitingFor:   wait.ForLog("Started MicrocksApplication"),
+		WaitingFor:   wait.ForLog("Started Microcks application"),
 	}
 	genericContainerReq := testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -91,6 +91,33 @@ func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRe
 			},
 		}
 		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+	}
+}
+
+// WithNetwork allows to add a custom network
+func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		req.Networks = append(req.Networks, networkName)
+	}
+}
+
+// WithNetworkAlias allows to add a custom network alias for a specific network
+func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		if req.NetworkAliases == nil {
+			req.NetworkAliases = make(map[string][]string)
+		}
+		req.NetworkAliases[networkName] = []string{networkAlias}
+	}
+}
+
+// WithEnv allows to add an environment variable
+func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env[key] = value
 	}
 }
 
