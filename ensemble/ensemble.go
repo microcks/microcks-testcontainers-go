@@ -30,9 +30,7 @@ func (co *ContainerOptions) Add(opt testcontainers.ContainerCustomizer) {
 type MicrocksEnsembleContainers struct {
 	ctx context.Context
 
-	network                    *testcontainers.DockerNetwork
-	primaryArtifactFilePath    string
-	secondaryArtifactsFilePath string
+	network *testcontainers.DockerNetwork
 
 	microcksContainer        *microcks.MicrocksContainer
 	microcksContainerOptions ContainerOptions
@@ -56,9 +54,7 @@ func (ec *MicrocksEnsembleContainers) GetPostmanContainer() *postman.PostmanCont
 func RunEnsembleContainers(ctx context.Context, opts ...Option) (*MicrocksEnsembleContainers, error) {
 	var err error
 
-	ensemble := &MicrocksEnsembleContainers{
-		ctx: ctx,
-	}
+	ensemble := &MicrocksEnsembleContainers{ctx: ctx}
 
 	// Options
 	defaults := []Option{WithDefaultNetwork()}
