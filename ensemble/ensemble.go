@@ -14,7 +14,7 @@ const (
 )
 
 // Option represents an option to pass to the ensemble
-type Option func(*MicrocksEnsembleContainers) error
+type Option func(*MicrocksContainersEnsemble) error
 
 // ContainerOptions represents the container options
 type ContainerOptions struct {
@@ -26,8 +26,8 @@ func (co *ContainerOptions) Add(opt testcontainers.ContainerCustomizer) {
 	co.list = append(co.list, opt)
 }
 
-// MicrocksEnsembleContainers represents the ensemble of containers
-type MicrocksEnsembleContainers struct {
+// MicrocksContainersEnsemble represents the ensemble of containers
+type MicrocksContainersEnsemble struct {
 	ctx context.Context
 
 	network *testcontainers.DockerNetwork
@@ -35,26 +35,44 @@ type MicrocksEnsembleContainers struct {
 	microcksContainer        *microcks.MicrocksContainer
 	microcksContainerOptions ContainerOptions
 
+	postmanEnabled          bool
 	postmanContainer        *postman.PostmanContainer
 	postmanContainerOptions ContainerOptions
 }
 
-// GetMicrocksContainers returns the Microcks container
-func (ec *MicrocksEnsembleContainers) GetMicrocksContainers() *microcks.MicrocksContainer {
+// GetMicrocksContainer returns the Microcks container
+func (ec *MicrocksContainersEnsemble) GetMicrocksContainer() *microcks.MicrocksContainer {
 	return ec.microcksContainer
 }
 
 // GetPostmanContainer returns the Postman container
-func (ec *MicrocksEnsembleContainers) GetPostmanContainer() *postman.PostmanContainer {
+func (ec *MicrocksContainersEnsemble) GetPostmanContainer() *postman.PostmanContainer {
 	return ec.postmanContainer
 }
 
-// RunEnsembleContainers creates instances of the Microcks and necessaries tools.
+// Terminate helps to terminate all containers
+func (ec *MicrocksContainersEnsemble) Terminate(ctx context.Context) error {
+	// Main Microcks container
+	if err := ec.microcksContainer.Terminate(ctx); err != nil {
+		return err
+	}
+
+	// Postman container
+	if ec.postmanEnabled {
+		if err := ec.postmanContainer.Terminate(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// RunContainers creates instances of the Microcks and necessaries tools.
 // Using sequential start to avoid resource contention on CI systems with weaker hardware.
-func RunEnsembleContainers(ctx context.Context, opts ...Option) (*MicrocksEnsembleContainers, error) {
+func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnsemble, error) {
 	var err error
 
-	ensemble := &MicrocksEnsembleContainers{ctx: ctx}
+	ensemble := &MicrocksContainersEnsemble{ctx: ctx}
 
 	// Options
 	defaults := []Option{WithDefaultNetwork()}
@@ -74,9 +92,11 @@ func RunEnsembleContainers(ctx context.Context, opts ...Option) (*MicrocksEnsemb
 	}
 
 	// Postman container
-	ensemble.postmanContainer, err = postman.RunContainer(ctx, ensemble.postmanContainerOptions.list...)
-	if err != nil {
-		return nil, err
+	if ensemble.postmanEnabled {
+		ensemble.postmanContainer, err = postman.RunContainer(ctx, ensemble.postmanContainerOptions.list...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return ensemble, nil
@@ -84,7 +104,7 @@ func RunEnsembleContainers(ctx context.Context, opts ...Option) (*MicrocksEnsemb
 
 // WithDefaultNetwork allows to use a default network
 func WithDefaultNetwork() Option {
-	return func(e *MicrocksEnsembleContainers) (err error) {
+	return func(e *MicrocksContainersEnsemble) (err error) {
 		e.network, err = network.New(e.ctx, network.WithCheckDuplicate())
 		if err != nil {
 			return err
@@ -101,7 +121,7 @@ func WithDefaultNetwork() Option {
 
 // WithNetwork allows to define the network
 func WithNetwork(network *testcontainers.DockerNetwork) Option {
-	return func(e *MicrocksEnsembleContainers) error {
+	return func(e *MicrocksContainersEnsemble) error {
 		e.network = network
 		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
 		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAlias))
@@ -115,7 +135,7 @@ func WithNetwork(network *testcontainers.DockerNetwork) Option {
 // ones within the Microcks container.
 // Once it will be started and healthy.
 func WithMainArtifact(artifactFilePath string) Option {
-	return func(e *MicrocksEnsembleContainers) error {
+	return func(e *MicrocksContainersEnsemble) error {
 		e.microcksContainerOptions.Add(microcks.WithMainArtifact(artifactFilePath))
 		return nil
 	}
@@ -125,8 +145,16 @@ func WithMainArtifact(artifactFilePath string) Option {
 // ones within the Microcks container.
 // Once it will be started and healthy.
 func WithSecondaryArtifact(artifactFilePath string) Option {
-	return func(e *MicrocksEnsembleContainers) error {
+	return func(e *MicrocksContainersEnsemble) error {
 		e.microcksContainerOptions.Add(microcks.WithSecondaryArtifact(artifactFilePath))
+		return nil
+	}
+}
+
+// WithPostman allows to enable Postman container
+func WithPostman(enable bool) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.postmanEnabled = enable
 		return nil
 	}
 }
