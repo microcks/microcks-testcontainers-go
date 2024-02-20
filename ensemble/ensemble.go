@@ -40,6 +40,11 @@ type MicrocksContainersEnsemble struct {
 	postmanContainerOptions ContainerOptions
 }
 
+// GetNetwork returns the ensemble network
+func (ec *MicrocksContainersEnsemble) GetNetwork() *testcontainers.DockerNetwork {
+	return ec.network
+}
+
 // GetMicrocksContainer returns the Microcks container
 func (ec *MicrocksContainersEnsemble) GetMicrocksContainer() *microcks.MicrocksContainer {
 	return ec.microcksContainer
