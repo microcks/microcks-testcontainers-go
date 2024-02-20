@@ -158,3 +158,19 @@ func WithPostman(enable bool) Option {
 		return nil
 	}
 }
+
+// WithPostmanImage helps to use specific Postman image
+func WithPostmanImage(image string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.postmanContainerOptions.Add(testcontainers.WithImage(image))
+		return nil
+	}
+}
+
+// WithMicrocksImage helps to use specific Microcks image
+func WithMicrocksImage(image string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.postmanContainerOptions.Add(testcontainers.WithImage(image))
+		return nil
+	}
+}

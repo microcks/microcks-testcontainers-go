@@ -170,9 +170,14 @@ import (
 )
 
 ensembleContainers, err := ensemble.RunContainers(ctx,
+    // Microcks container in ensemble
+    ensemble.WithMicrocksImage("quay.io/microcks/microcks-uber:latest"), // Optional
     ensemble.WithMainArtifact("testdata/apipastries-openapi.yaml"),
     ensemble.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+
+    // Postman container in ensemble
     ensemble.WithPostman(true),
+    ensemble.WithPostmanImage("quay.io/microcks/microcks-postman-runtime:latest"),  // Optional
 )
 ```
 
