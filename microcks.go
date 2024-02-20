@@ -290,6 +290,9 @@ func (container *MicrocksContainer) importArtifact(ctx context.Context, artifact
 	}
 
 	response, err := c.UploadArtifactWithBody(ctx, nil, writer.FormDataContentType(), body)
+	if err != nil {
+		return 0, err
+	}
 	return response.StatusCode, err
 }
 
