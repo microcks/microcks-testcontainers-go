@@ -11,7 +11,7 @@ const (
 	defaultImage = "quay.io/microcks/microcks-postman-runtime:latest"
 
 	// DefaultHTTPPort represents the default Postman HTTP port
-	DefaultHTTPPort = "6000/tcp"
+	DefaultHTTPPort = "3000/tcp"
 )
 
 // PostmanContainer represents the Postman container type used in the ensemble.
@@ -25,7 +25,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        defaultImage,
 			ExposedPorts: []string{DefaultHTTPPort},
-			WaitingFor:   wait.ForLog("Started Postman"),
+			WaitingFor:   wait.ForLog("Microcks postman-runtime wrapper listening on port: 3000"),
 		},
 		Started: true,
 	}
