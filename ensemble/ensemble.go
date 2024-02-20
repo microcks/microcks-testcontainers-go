@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	defaultNetworkAlias = "microcks"
+	defaultNetworkAliasMicrocks = "microcks"
+	defaultNetworkAliasPostman  = "postman"
 )
 
 // Option represents an option to pass to the ensemble
@@ -116,9 +117,9 @@ func WithDefaultNetwork() Option {
 		}
 
 		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
-		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAlias))
+		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAliasMicrocks))
 		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
-		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, defaultNetworkAlias))
+		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, defaultNetworkAliasPostman))
 
 		return nil
 	}
@@ -129,9 +130,9 @@ func WithNetwork(network *testcontainers.DockerNetwork) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.network = network
 		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
-		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAlias))
+		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAliasMicrocks))
 		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
-		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, defaultNetworkAlias))
+		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, defaultNetworkAliasPostman))
 		return nil
 	}
 }
