@@ -86,7 +86,7 @@ func WithSecondaryArtifact(artifactFilePath string) testcontainers.CustomizeRequ
 func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		hooks := testcontainers.ContainerLifecycleHooks{
-			PostStarts: []testcontainers.ContainerHook{
+			PostReadies: []testcontainers.ContainerHook{
 				importArtifactHook(artifactFilePath, main),
 			},
 		}
