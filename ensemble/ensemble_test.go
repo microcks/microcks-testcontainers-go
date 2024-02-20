@@ -38,6 +38,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithMainArtifact("../testdata/apipastries-openapi.yaml"),
+		ensemble.WithSecondaryArtifact("../testdata/apipastries-postman-collection.json"),
 		ensemble.WithPostman(true),
 	)
 	require.NoError(t, err)
