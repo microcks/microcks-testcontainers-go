@@ -90,7 +90,9 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	}
 
 	// Microcks container
-	ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", "http://postman:3000"))
+	if ensemble.postmanEnabled {
+		ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", "http://postman:3000"))
+	}
 	ensemble.microcksContainerOptions.Add(microcks.WithEnv("TEST_CALLBACK_URL", "http://microcks:8080"))
 	ensemble.microcksContainer, err = microcks.RunContainer(ctx, ensemble.microcksContainerOptions.list...)
 	if err != nil {
