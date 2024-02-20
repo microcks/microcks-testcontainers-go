@@ -161,6 +161,13 @@ func MicrocksContractTestingFunctionality(
 		require.False(t, r.Success)
 	}
 
+	// Check nil first step result message
+	t0bad := (*testResultBad.TestCaseResults)[0].TestStepResults
+	require.NotNil(t, t0bad)
+	s0bad := (*t0bad)[0]
+	require.NotNil(t, s0bad)
+	require.True(t, strings.Contains(*s0bad.Message, "Valid"), "Message not contain Valid word", *s0bad.Message)
+
 	// Good implementation
 	testRequestGood := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
@@ -176,7 +183,13 @@ func MicrocksContractTestingFunctionality(
 	for _, r := range *testResultGood.TestCaseResults {
 		require.True(t, r.Success)
 	}
-	// TODO: Assert messages
+
+	// Check nil first step result message
+	t0good := (*testResultGood.TestCaseResults)[0].TestStepResults
+	require.NotNil(t, t0good)
+	s0good := (*t0good)[0]
+	require.NotNil(t, s0good)
+	require.Nil(t, s0good.Message)
 }
 
 // Deprecated: use testcontainers.WithNetwork once it's released.
