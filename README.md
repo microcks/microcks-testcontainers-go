@@ -187,8 +187,8 @@ You can execute a `POSTMAN` test using an ensemble that way:
 // Build a new TestRequest.
 testRequest := client.TestRequest{
     ServiceId:    "API Pastries:0.0.1",
-    RunnerType:   client.TestRunnerTypeOPENAPISCHEMA,
-    TestEndpoint: "http://good-impl:3001",
+    RunnerType:   client.TestRunnerTypePOSTMAN,
+    TestEndpoint: "http://good-impl:3003",
     Timeout:      2000,
 }
 
