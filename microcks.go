@@ -48,7 +48,7 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 	req := testcontainers.ContainerRequest{
 		Image:        defaultImage,
 		ExposedPorts: []string{DefaultHttpPort, DefaultGrpcPort},
-		WaitingFor:   wait.ForLog("Started Microcks application"),
+		WaitingFor:   wait.ForLog("Started MicrocksApplication"),
 	}
 	genericContainerReq := testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
