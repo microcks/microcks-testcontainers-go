@@ -137,6 +137,48 @@ func AssertGoodImplementation(t *testing.T, ctx context.Context, microcksContain
 	}
 }
 
+// MicrocksContractTestingFunctionality helps to assert contract testing functionality
+func MicrocksContractTestingFunctionality(
+	t *testing.T,
+	ctx context.Context,
+	mc *microcks.MicrocksContainer,
+	badImpl,
+	goodImpl testcontainers.Container) {
+
+	// Bad implementation
+	testRequestBad := client.TestRequest{
+		ServiceId:    "API Pastries:0.0.1",
+		RunnerType:   client.TestRunnerTypePOSTMAN,
+		TestEndpoint: "http://bad-impl:3002",
+		Timeout:      5000,
+	}
+	testResultBad, errBad := mc.TestEndpoint(ctx, &testRequestBad)
+	require.NoError(t, errBad)
+	require.False(t, testResultBad.Success)
+	require.Equal(t, "http://bad-impl:3002", testResultBad.TestedEndpoint)
+	require.Equal(t, 3, len(*testResultBad.TestCaseResults))
+	for _, r := range *testResultBad.TestCaseResults {
+		require.False(t, r.Success)
+	}
+
+	// Good implementation
+	testRequestGood := client.TestRequest{
+		ServiceId:    "API Pastries:0.0.1",
+		RunnerType:   client.TestRunnerTypePOSTMAN,
+		TestEndpoint: "http://good-impl:3003",
+		Timeout:      5000,
+	}
+	testResultGood, errGood := mc.TestEndpoint(ctx, &testRequestGood)
+	require.NoError(t, errGood)
+	require.True(t, testResultGood.Success)
+	require.Equal(t, "http://good-impl:3003", testResultGood.TestedEndpoint)
+	require.Equal(t, 3, len(*testResultGood.TestCaseResults))
+	for _, r := range *testResultGood.TestCaseResults {
+		require.True(t, r.Success)
+	}
+	// TODO: Assert messages
+}
+
 // Deprecated: use testcontainers.WithNetwork once it's released.
 // WithNetwork is a custom request option that adds a network to a container.
 // This is a temporary option until the next release of testcontainers-go, which will include
