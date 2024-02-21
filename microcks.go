@@ -33,9 +33,16 @@ import (
 )
 
 const (
-	defaultImage    = "quay.io/microcks/microcks-uber:latest"
+	defaultImage = "quay.io/microcks/microcks-uber:latest"
+
+	// DefaultHttpPort represents the default Microcks HTTP port
 	DefaultHttpPort = "8080/tcp"
+
+	// DefaultGrpcPort represents the default Microcks GRPC port
 	DefaultGrpcPort = "9090/tcp"
+
+	// DefaultNetworkAlias represents the default network alias of the the MicrocksContainer
+	DefaultNetworkAlias = "microcks"
 )
 
 // MicrocksContainer represents the Microcks container type used in the module.
@@ -86,11 +93,38 @@ func WithSecondaryArtifact(artifactFilePath string) testcontainers.CustomizeRequ
 func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) {
 		hooks := testcontainers.ContainerLifecycleHooks{
-			PostStarts: []testcontainers.ContainerHook{
+			PostReadies: []testcontainers.ContainerHook{
 				importArtifactHook(artifactFilePath, main),
 			},
 		}
 		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+	}
+}
+
+// WithNetwork allows to add a custom network
+func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		req.Networks = append(req.Networks, networkName)
+	}
+}
+
+// WithNetworkAlias allows to add a custom network alias for a specific network
+func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		if req.NetworkAliases == nil {
+			req.NetworkAliases = make(map[string][]string)
+		}
+		req.NetworkAliases[networkName] = []string{networkAlias}
+	}
+}
+
+// WithEnv allows to add an environment variable
+func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env[key] = value
 	}
 }
 
@@ -263,6 +297,9 @@ func (container *MicrocksContainer) importArtifact(ctx context.Context, artifact
 	}
 
 	response, err := c.UploadArtifactWithBody(ctx, nil, writer.FormDataContentType(), body)
+	if err != nil {
+		return 0, err
+	}
 	return response.StatusCode, err
 }
 

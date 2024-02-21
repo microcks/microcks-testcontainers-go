@@ -118,3 +118,79 @@ require.Equal(t, "http://bad-impl:3001", testResult.TestedEndpoint)
 ```
 
 The `testResult` gives you access to all details regarding success of failure on different test cases.
+
+### Advanced features with MicrocksContainersEnsemble
+
+The `MicrocksContainer` referenced above supports essential features of Microcks provided by the main Microcks container.
+The list of supported features is the following:
+
+* Mocking of REST APIs using different kinds of artifacts,
+* Contract-testing of REST APIs using `OPEN_API_SCHEMA` runner/strategy,
+* Mocking and contract-testing of SOAP WebServices,
+* Mocking and contract-testing of GraphQL APIs,
+* Mocking and contract-testing of gRPC APIs.
+
+To support features like Asynchronous API and `POSTMAN` contract-testing, we introduced `MicrocksContainersEnsemble` that allows managing
+additional Microcks services. `MicrocksContainersEnsemble` allow you to implement
+[Different levels of API contract testing](https://medium.com/@lbroudoux/different-levels-of-api-contract-testing-with-microcks-ccc0847f8c97)
+in the Inner Loop with Testcontainers!
+
+A `MicrocksContainersEnsemble` conforms to Testcontainers lifecycle methods and presents roughly the same interface
+as a `MicrocksContainer`. You can create and build an ensemble that way:
+
+```go
+import (
+    ensemble "microcks.io/testcontainers-go/ensemble"
+)
+
+ensembleContainers, err := ensemble.RunContainers(ctx, 
+    ensemble.WithMainArtifact("testdata/apipastries-openapi.yaml"),
+    ensemble.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+)
+```
+
+A `MicrocksContainer` is wrapped by an ensemble and is still available to import artifacts and execute test methods.
+You have to access it using:
+
+```go
+microcks := ensemble.GetMicrocksContainer();
+microcks.ImportAsMainArtifact(...);
+microcks.Logs(...);
+```
+
+Please refer to our [ensemble tests](https://github.com/microcks/microcks-testcontainers-go/blob/main/ensemble/ensemble_test.go) for comprehensive example on how to use it.
+
+#### Postman contract-testing
+
+On this `ensemble` you may want to enable additional features such as Postman contract-testing:
+
+```go
+import (
+    ensemble "microcks.io/testcontainers-go/ensemble"
+)
+
+ensembleContainers, err := ensemble.RunContainers(ctx,
+    // Microcks container in ensemble
+    ensemble.WithMainArtifact("testdata/apipastries-openapi.yaml"),
+    ensemble.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+
+    // Postman container in ensemble
+    ensemble.WithPostman(true),
+)
+```
+
+You can execute a `POSTMAN` test using an ensemble that way:
+
+```go
+// Build a new TestRequest.
+testRequest := client.TestRequest{
+    ServiceId:    "API Pastries:0.0.1",
+    RunnerType:   client.TestRunnerTypePOSTMAN,
+    TestEndpoint: "http://good-impl:3003",
+    Timeout:      2000,
+}
+
+testResult := ensemble.
+    GetMicrocksContainer().
+    TestEndpoint(context.Background(), testRequest);
+```
