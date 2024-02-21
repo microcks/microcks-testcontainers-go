@@ -33,9 +33,16 @@ import (
 )
 
 const (
-	defaultImage    = "quay.io/microcks/microcks-uber:latest"
+	defaultImage = "quay.io/microcks/microcks-uber:latest"
+
+	// DefaultHttpPort represents the default Microcks HTTP port
 	DefaultHttpPort = "8080/tcp"
+
+	// DefaultGrpcPort represents the default Microcks GRPC port
 	DefaultGrpcPort = "9090/tcp"
+
+	// DefaultNetworkAlias represents the default network alias of the the MicrocksContainer
+	DefaultNetworkAlias = "microcks"
 )
 
 // MicrocksContainer represents the Microcks container type used in the module.

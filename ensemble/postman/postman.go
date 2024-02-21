@@ -12,6 +12,9 @@ const (
 
 	// DefaultHTTPPort represents the default Postman HTTP port
 	DefaultHTTPPort = "3000/tcp"
+
+	// DefaultNetworkAlias represents the default network alias of the the PostmanContainer
+	DefaultNetworkAlias = "postman"
 )
 
 // PostmanContainer represents the Postman container type used in the ensemble.

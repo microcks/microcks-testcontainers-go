@@ -2,16 +2,12 @@ package ensemble
 
 import (
 	"context"
+	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/postman"
-)
-
-const (
-	defaultNetworkAliasMicrocks = "microcks"
-	defaultNetworkAliasPostman  = "postman"
 )
 
 // Option represents an option to pass to the ensemble
@@ -91,9 +87,11 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 
 	// Microcks container
 	if ensemble.postmanEnabled {
-		ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", "http://postman:3000"))
+		postmanRunnerURL := strings.Join([]string{"http://", postman.DefaultNetworkAlias, ":3000"}, "")
+		ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", postmanRunnerURL))
 	}
-	ensemble.microcksContainerOptions.Add(microcks.WithEnv("TEST_CALLBACK_URL", "http://microcks:8080"))
+	testCallbackURL := strings.Join([]string{"http://", microcks.DefaultNetworkAlias, ":8080"}, "")
+	ensemble.microcksContainerOptions.Add(microcks.WithEnv("TEST_CALLBACK_URL", testCallbackURL))
 	ensemble.microcksContainer, err = microcks.RunContainer(ctx, ensemble.microcksContainerOptions.list...)
 	if err != nil {
 		return nil, err
@@ -119,9 +117,9 @@ func WithDefaultNetwork() Option {
 		}
 
 		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
-		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAliasMicrocks))
+		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, microcks.DefaultNetworkAlias))
 		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
-		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, defaultNetworkAliasPostman))
+		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, postman.DefaultNetworkAlias))
 
 		return nil
 	}
@@ -132,9 +130,9 @@ func WithNetwork(network *testcontainers.DockerNetwork) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.network = network
 		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
-		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, defaultNetworkAliasMicrocks))
+		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, microcks.DefaultNetworkAlias))
 		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
-		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, defaultNetworkAliasPostman))
+		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, postman.DefaultNetworkAlias))
 		return nil
 	}
 }
@@ -171,6 +169,7 @@ func WithPostman(enable bool) Option {
 func WithPostmanImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.postmanContainerOptions.Add(testcontainers.WithImage(image))
+		e.postmanEnabled = true
 		return nil
 	}
 }
