@@ -22,6 +22,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
 	microcks "microcks.io/testcontainers-go"
+	"microcks.io/testcontainers-go/ensemble/async"
 	"microcks.io/testcontainers-go/ensemble/postman"
 )
 
@@ -50,6 +51,10 @@ type MicrocksContainersEnsemble struct {
 	postmanEnabled          bool
 	postmanContainer        *postman.PostmanContainer
 	postmanContainerOptions ContainerOptions
+
+	asyncEnabled                bool
+	asyncMinionContainer        *async.MicrocksAysncMinionContainer
+	asyncMinionContainerOptions ContainerOptions
 }
 
 // GetNetwork returns the ensemble network
@@ -67,6 +72,11 @@ func (ec *MicrocksContainersEnsemble) GetPostmanContainer() *postman.PostmanCont
 	return ec.postmanContainer
 }
 
+// GetAsyncMinionContainer returns the Async Minion container
+func (ec *MicrocksContainersEnsemble) GetAsyncMinionContainer() *async.MicrocksAysncMinionContainer {
+	return ec.asyncMinionContainer
+}
+
 // Terminate helps to terminate all containers
 func (ec *MicrocksContainersEnsemble) Terminate(ctx context.Context) error {
 	// Main Microcks container
@@ -81,10 +91,17 @@ func (ec *MicrocksContainersEnsemble) Terminate(ctx context.Context) error {
 		}
 	}
 
+	// Async minion container
+	if ec.asyncEnabled {
+		if err := ec.asyncMinionContainer.Terminate(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-// RunContainers creates instances of the Microcks and necessaries tools.
+// RunContainers creates instances of the Microcks Ensemble
 // Using sequential start to avoid resource contention on CI systems with weaker hardware.
 func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnsemble, error) {
 	var err error
@@ -100,21 +117,32 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 		}
 	}
 
-	// Microcks container
-	if ensemble.postmanEnabled {
-		postmanRunnerURL := strings.Join([]string{"http://", postman.DefaultNetworkAlias, ":3000"}, "")
-		ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", postmanRunnerURL))
-	}
+	// Set microcks container env variables
 	testCallbackURL := strings.Join([]string{"http://", microcks.DefaultNetworkAlias, ":8080"}, "")
+	postmanRunnerURL := strings.Join([]string{"http://", postman.DefaultNetworkAlias, ":3000"}, "")
+	asyncMinionURL := strings.Join([]string{"http://", async.DefaultNetworkAlias, ":8081"}, "")
+
 	ensemble.microcksContainerOptions.Add(microcks.WithEnv("TEST_CALLBACK_URL", testCallbackURL))
+	ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", postmanRunnerURL))
+	ensemble.microcksContainerOptions.Add(microcks.WithEnv("ASYNC_MINION_URL", asyncMinionURL))
+
 	ensemble.microcksContainer, err = microcks.RunContainer(ctx, ensemble.microcksContainerOptions.list...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Postman container
+	// Start Postman container if enabled
 	if ensemble.postmanEnabled {
 		ensemble.postmanContainer, err = postman.RunContainer(ctx, ensemble.postmanContainerOptions.list...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// String Async minion container if enabled
+	if ensemble.asyncEnabled {
+		microcksHostPort := strings.Join([]string{microcks.DefaultNetworkAlias, ":8080"}, "")
+		ensemble.asyncMinionContainer, err = async.RunContainer(ctx, microcksHostPort, ensemble.asyncMinionContainerOptions.list...)
 		if err != nil {
 			return nil, err
 		}
@@ -123,51 +151,27 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	return ensemble, nil
 }
 
-// WithDefaultNetwork allows to use a default network
-func WithDefaultNetwork() Option {
-	return func(e *MicrocksContainersEnsemble) (err error) {
-		e.network, err = network.New(e.ctx, network.WithCheckDuplicate())
-		if err != nil {
-			return err
-		}
-
-		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
-		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, microcks.DefaultNetworkAlias))
-		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
-		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, postman.DefaultNetworkAlias))
-
+// WithMicrocksImage helps to use specific Microcks image
+func WithMicrocksImage(image string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(testcontainers.WithImage(image))
 		return nil
 	}
 }
 
-// WithNetwork allows to define the network
-func WithNetwork(network *testcontainers.DockerNetwork) Option {
+// WithAsynncFature enables the Async Feature container with default container image (deduced from Microcks main one).
+func WithAsyncFeature() Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.network = network
-		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
-		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, microcks.DefaultNetworkAlias))
-		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
-		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, postman.DefaultNetworkAlias))
+		e.asyncEnabled = true
 		return nil
 	}
 }
 
-// WithMainArtifact provides paths to artifacts that will be imported as main or main
-// ones within the Microcks container.
-// Once it will be started and healthy.
-func WithMainArtifact(artifactFilePath string) Option {
+// WithAsyncFeatureImage enabled the Async Feature container with specific image
+func WithAsyncFeatureImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.microcksContainerOptions.Add(microcks.WithMainArtifact(artifactFilePath))
-		return nil
-	}
-}
-
-// WithSecondaryArtifact provides paths to artifacts that will be imported as main or main
-// ones within the Microcks container.
-// Once it will be started and healthy.
-func WithSecondaryArtifact(artifactFilePath string) Option {
-	return func(e *MicrocksContainersEnsemble) error {
-		e.microcksContainerOptions.Add(microcks.WithSecondaryArtifact(artifactFilePath))
+		e.asyncMinionContainerOptions.Add(testcontainers.WithImage(image))
+		e.asyncEnabled = true
 		return nil
 	}
 }
@@ -189,10 +193,55 @@ func WithPostmanImage(image string) Option {
 	}
 }
 
-// WithMicrocksImage helps to use specific Microcks image
-func WithMicrocksImage(image string) Option {
+// WithDefaultNetwork allows to use a default network
+func WithDefaultNetwork() Option {
+	return func(e *MicrocksContainersEnsemble) (err error) {
+		e.network, err = network.New(e.ctx, network.WithCheckDuplicate())
+		if err != nil {
+			return err
+		}
+
+		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
+		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, microcks.DefaultNetworkAlias))
+		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
+		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, postman.DefaultNetworkAlias))
+		e.asyncMinionContainerOptions.Add(async.WithNetwork(e.network.Name))
+		e.asyncMinionContainerOptions.Add(async.WithNetworkAlias(e.network.Name, async.DefaultNetworkAlias))
+
+		return nil
+	}
+}
+
+// WithNetwork allows to define the network
+func WithNetwork(network *testcontainers.DockerNetwork) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.postmanContainerOptions.Add(testcontainers.WithImage(image))
+		e.network = network
+		e.microcksContainerOptions.Add(microcks.WithNetwork(e.network.Name))
+		e.microcksContainerOptions.Add(microcks.WithNetworkAlias(e.network.Name, microcks.DefaultNetworkAlias))
+		e.postmanContainerOptions.Add(postman.WithNetwork(e.network.Name))
+		e.postmanContainerOptions.Add(postman.WithNetworkAlias(e.network.Name, postman.DefaultNetworkAlias))
+		e.asyncMinionContainerOptions.Add(async.WithNetwork(e.network.Name))
+		e.asyncMinionContainerOptions.Add(async.WithNetworkAlias(e.network.Name, async.DefaultNetworkAlias))
+		return nil
+	}
+}
+
+// WithMainArtifact provides paths to artifacts that will be imported as main or main
+// ones within the Microcks container.
+// Once it will be started and healthy.
+func WithMainArtifact(artifactFilePath string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(microcks.WithMainArtifact(artifactFilePath))
+		return nil
+	}
+}
+
+// WithSecondaryArtifact provides paths to artifacts that will be imported as main or main
+// ones within the Microcks container.
+// Once it will be started and healthy.
+func WithSecondaryArtifact(artifactFilePath string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(microcks.WithSecondaryArtifact(artifactFilePath))
 		return nil
 	}
 }

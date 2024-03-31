@@ -95,3 +95,24 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 		goodImpl,
 	)
 }
+
+func TestAsyncFeatureSetup(t *testing.T) {
+	ctx := context.Background()
+
+	// Ensemble
+	ens, err := ensemble.RunContainers(
+		ctx,
+		ensemble.WithAsyncFeature(),
+	)
+	require.NoError(t, err)
+
+	// Cleanup containers
+	t.Cleanup(func() {
+		if err := ens.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+
+	// Tests & assertions
+	test.ConfigRetrieval(t, ctx, ens.GetMicrocksContainer())
+}
