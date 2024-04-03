@@ -17,6 +17,7 @@ package async
 
 import (
 	"context"
+	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -32,9 +33,26 @@ const (
 	DefaultNetworkAlias = "microcks-async-minion"
 )
 
+// Option represents an option to pass to the minion
+type Option func(*MicrocksAysncMinionContainer) error
+
+// ContainerOptions represents the container options
+type ContainerOptions struct {
+	list []testcontainers.ContainerCustomizer
+}
+
+// Add adds an option to the list
+func (co *ContainerOptions) Add(opt testcontainers.ContainerCustomizer) {
+	co.list = append(co.list, opt)
+}
+
 // MicrocksAysncMinionContainer represents the Microcks Async Minion container type used in the module.
 type MicrocksAysncMinionContainer struct {
 	testcontainers.Container
+
+	extraProtocols string
+
+	containerOptions ContainerOptions
 }
 
 // RunContainer creates an instance of the MicrocksAysncMinionContainer type.
@@ -76,5 +94,28 @@ func WithNetworkAlias(networkName, networkAlias string) testcontainers.Customize
 			req.NetworkAliases = make(map[string][]string)
 		}
 		req.NetworkAliases[networkName] = []string{networkAlias}
+	}
+}
+
+// WithEnv allows to add an environment variable
+func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env[key] = value
+	}
+}
+
+// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a Kafka server to allow Kafka messages mocking
+func WithKafkaConnection(connection KafkaConnection) Option {
+	return func(minion *MicrocksAysncMinionContainer) error {
+		if !strings.Contains(minion.extraProtocols, ",KAFKA") {
+			minion.extraProtocols = strings.Join([]string{minion.extraProtocols, ",KAFKA"}, "")
+		}
+
+		minion.containerOptions.Add(WithEnv("ASYNC_PROTOCOLS", minion.extraProtocols))
+		minion.containerOptions.Add(WithEnv("KAFKA_BOOTSTRAP_SERVER", connection.bootstrapServers))
+		return nil
 	}
 }
