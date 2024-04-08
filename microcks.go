@@ -165,7 +165,7 @@ func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, servic
 }
 
 // GraphQLMockEndpoint get the exposed mock endpoints for a GraphQL Service.
-func (container *MicrocksContainer) GrapQLMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+func (container *MicrocksContainer) GraphQLMockEndpoint(ctx context.Context, service string, version string) (string, error) {
 	endpoint, err := container.HttpEndpoint(ctx)
 	if err != nil {
 		return "", err

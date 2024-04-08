@@ -53,7 +53,7 @@ func MockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microck
 	require.NoError(t, err)
 	require.Equal(t, endpoint+"/rest/API Pastries/0.0.1", baseApiUrl)
 
-	baseApiUrl, err = microcksContainer.GrapQLMockEndpoint(ctx, "Pastries Graph", "1")
+	baseApiUrl, err = microcksContainer.GraphQLMockEndpoint(ctx, "Pastries Graph", "1")
 	require.NoError(t, err)
 	require.Equal(t, endpoint+"/graphql/Pastries Graph/1", baseApiUrl)
 
