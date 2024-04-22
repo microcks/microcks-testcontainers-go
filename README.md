@@ -76,7 +76,7 @@ if err != nil {
 
 `status` if the status of the Http response from the microcks container and should be equal to `201` in case of success.
 
-Please refer to our [microcks_test](https://github.com/microcks/microcks-testcontainers-go/blob/microcks_test.go) for comprehensive example on how to use it.
+Please refer to our [microcks_test](https://github.com/microcks/microcks-testcontainers-go/blob/main/microcks_test.go) for comprehensive example on how to use it.
 
 ### Using mock endpoints for your dependencies
 
