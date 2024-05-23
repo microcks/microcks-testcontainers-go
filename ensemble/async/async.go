@@ -17,10 +17,13 @@ package async
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 )
 
 const (
@@ -57,11 +60,17 @@ type MicrocksAysncMinionContainer struct {
 
 // RunContainer creates an instance of the MicrocksAysncMinionContainer type.
 func RunContainer(ctx context.Context, microcksHostPort string, opts ...testcontainers.ContainerCustomizer) (*MicrocksAysncMinionContainer, error) {
+	hostAccessPort, err := convertPortToInt(microcksHostPort)
+	if err != nil {
+		return nil, err
+	}
+
 	req := testcontainers.ContainerRequest{
-		Image:        DefaultImage,
-		ExposedPorts: []string{DefaultHttpPort},
-		WaitingFor:   wait.ForLog("Profile prod activated"),
-		Env:          map[string]string{"MICROCKS_HOST_PORT": microcksHostPort},
+		Image:           DefaultImage,
+		ExposedPorts:    []string{DefaultHttpPort},
+		HostAccessPorts: []int{hostAccessPort},
+		WaitingFor:      wait.ForLog("Profile prod activated"),
+		Env:             map[string]string{"MICROCKS_HOST_PORT": microcksHostPort},
 	}
 	genericContainerReq := testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -113,15 +122,27 @@ func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
 	}
 }
 
-// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a Kafka server to allow Kafka messages mocking
-func WithKafkaConnection(connection KafkaConnection) Option {
+// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a Kafka server to allow Kafka messages mocking.
+func WithKafkaConnection(connection kafka.Connection) Option {
 	return func(minion *MicrocksAysncMinionContainer) error {
 		if !strings.Contains(minion.extraProtocols, ",KAFKA") {
 			minion.extraProtocols = strings.Join([]string{minion.extraProtocols, ",KAFKA"}, "")
 		}
 
 		minion.containerOptions.Add(WithEnv("ASYNC_PROTOCOLS", minion.extraProtocols))
-		minion.containerOptions.Add(WithEnv("KAFKA_BOOTSTRAP_SERVER", connection.bootstrapServers))
+		minion.containerOptions.Add(WithEnv("KAFKA_BOOTSTRAP_SERVER", connection.BootstrapServers))
 		return nil
 	}
+}
+
+func convertPortToInt(port string) (int, error) {
+	ports := strings.Split(port, ":")
+	if len(ports) != 2 {
+		return 0, fmt.Errorf("port not found in string (%v)", ports)
+	}
+	portInt, err := strconv.Atoi(ports[1])
+	if err != nil {
+		return 0, err
+	}
+	return portInt, nil
 }
