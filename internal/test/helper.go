@@ -212,8 +212,10 @@ func MicrocksContractTestingFunctionality(
 // This is a temporary option until the next release of testcontainers-go, which will include
 // this option.
 func WithNetwork(network string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = []string{network}
+
+		return nil
 	}
 }
 

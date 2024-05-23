@@ -62,17 +62,21 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 
 // WithNetwork allows to add a custom network
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
+
+		return nil
 	}
 }
 
 // WithNetworkAlias allows to add a custom network alias for a specific network
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
 			req.NetworkAliases = make(map[string][]string)
 		}
 		req.NetworkAliases[networkName] = []string{networkAlias}
+
+		return nil
 	}
 }

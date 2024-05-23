@@ -82,28 +82,34 @@ func RunContainer(ctx context.Context, microcksHostPort string, opts ...testcont
 
 // WithNetwork allows to add a custom network
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
+
+		return nil
 	}
 }
 
 // WithNetworkAlias allows to add a custom network alias for a specific network
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
 			req.NetworkAliases = make(map[string][]string)
 		}
 		req.NetworkAliases[networkName] = []string{networkAlias}
+
+		return nil
 	}
 }
 
 // WithEnv allows to add an environment variable
 func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.Env == nil {
 			req.Env = make(map[string]string)
 		}
 		req.Env[key] = value
+
+		return nil
 	}
 }
 

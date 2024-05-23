@@ -91,40 +91,47 @@ func WithSecondaryArtifact(artifactFilePath string) testcontainers.CustomizeRequ
 // WithArtifact provides paths to artifacts that will be imported within the Microcks container.
 // Once it will be started and healthy.
 func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		hooks := testcontainers.ContainerLifecycleHooks{
 			PostReadies: []testcontainers.ContainerHook{
 				importArtifactHook(artifactFilePath, main),
 			},
 		}
 		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+
+		return nil
 	}
 }
 
 // WithNetwork allows to add a custom network
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
+		return nil
 	}
 }
 
 // WithNetworkAlias allows to add a custom network alias for a specific network
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
 			req.NetworkAliases = make(map[string][]string)
 		}
 		req.NetworkAliases[networkName] = []string{networkAlias}
+
+		return nil
 	}
 }
 
 // WithEnv allows to add an environment variable
 func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.Env == nil {
 			req.Env = make(map[string]string)
 		}
 		req.Env[key] = value
+
+		return nil
 	}
 }
 
