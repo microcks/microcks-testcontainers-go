@@ -17,8 +17,6 @@ package async
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -60,28 +58,21 @@ type MicrocksAysncMinionContainer struct {
 
 // RunContainer creates an instance of the MicrocksAysncMinionContainer type.
 func RunContainer(ctx context.Context, microcksHostPort string, opts ...testcontainers.ContainerCustomizer) (*MicrocksAysncMinionContainer, error) {
-	hostAccessPort, err := convertPortToInt(microcksHostPort)
-	if err != nil {
-		return nil, err
-	}
-
-	req := testcontainers.ContainerRequest{
-		Image:           DefaultImage,
-		ExposedPorts:    []string{DefaultHttpPort},
-		HostAccessPorts: []int{hostAccessPort},
-		WaitingFor:      wait.ForLog("Profile prod activated"),
-		Env:             map[string]string{"MICROCKS_HOST_PORT": microcksHostPort},
-	}
-	genericContainerReq := testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
+	req := testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        DefaultImage,
+			ExposedPorts: []string{DefaultHttpPort},
+			WaitingFor:   wait.ForLog("Profile prod activated"),
+			Env:          map[string]string{"MICROCKS_HOST_PORT": microcksHostPort},
+		},
+		Started: true,
 	}
 
 	for _, opt := range opts {
-		opt.Customize(&genericContainerReq)
+		opt.Customize(&req)
 	}
 
-	container, err := testcontainers.GenericContainer(ctx, genericContainerReq)
+	container, err := testcontainers.GenericContainer(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -133,16 +124,4 @@ func WithKafkaConnection(connection kafka.Connection) Option {
 		minion.containerOptions.Add(WithEnv("KAFKA_BOOTSTRAP_SERVER", connection.BootstrapServers))
 		return nil
 	}
-}
-
-func convertPortToInt(port string) (int, error) {
-	ports := strings.Split(port, ":")
-	if len(ports) != 2 {
-		return 0, fmt.Errorf("port not found in string (%v)", ports)
-	}
-	portInt, err := strconv.Atoi(ports[1])
-	if err != nil {
-		return 0, err
-	}
-	return portInt, nil
 }
