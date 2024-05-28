@@ -4,7 +4,7 @@ go 1.21.3
 
 require (
 	github.com/stretchr/testify v1.9.0
-	github.com/testcontainers/testcontainers-go v0.31.0
+	github.com/testcontainers/testcontainers-go v0.31.1-0.20240524121510-d4a21ea92ee8
 	microcks.io/go-client v0.1.0
 )
 

@@ -43,8 +43,9 @@ func (co *ContainerOptions) Add(opt testcontainers.ContainerCustomizer) {
 type MicrocksContainersEnsemble struct {
 	ctx context.Context
 
-	network   *testcontainers.DockerNetwork
-	hostPorts []int
+	network *testcontainers.DockerNetwork
+
+	hostAccessPorts []int
 
 	microcksContainer        *microcks.MicrocksContainer
 	microcksContainerOptions ContainerOptions
@@ -127,26 +128,18 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", postmanRunnerURL))
 	ensemble.microcksContainerOptions.Add(microcks.WithEnv("ASYNC_MINION_URL", asyncMinionURL))
 
-	// Start a port forwarder container
-	if len(ensemble.hostPorts) > 0 {
-		// TODO: Ideas
-		// _, err := pf.RunContainer(ctx,
-		// 	pf.WithHostPorts(ensemble.hostPorts),
-		// 	pf.WithNetwork(...),
-		// 	pf.NetworkAliases(...),
-		// )
-		// if err != nil {
-		// 	return nil, err
-		// }
+	// Start default Microcks container.
+	if len(ensemble.hostAccessPorts) > 0 {
+		ensemble.microcksContainerOptions.Add(
+			microcks.WithHostAccessPorts(ensemble.hostAccessPorts),
+		)
 	}
-
-	// Start default Microcks container
 	ensemble.microcksContainer, err = microcks.RunContainer(ctx, ensemble.microcksContainerOptions.list...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Start Postman container if enabled
+	// Start Postman container if enabled.
 	if ensemble.postmanEnabled {
 		ensemble.postmanContainer, err = postman.RunContainer(ctx, ensemble.postmanContainerOptions.list...)
 		if err != nil {
@@ -261,11 +254,11 @@ func WithSecondaryArtifact(artifactFilePath string) Option {
 	}
 }
 
-// WithHostPorts helps to open connections between Microcks, Postman or Microcks async
+// WithHostAccessPorts helps to open connections between Microcks, Postman or Microcks async
 // to the user's host ports
-func WithHostPorts(hostPorts []int) Option {
+func WithHostAccessPorts(hostAccessPorts []int) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.hostPorts = hostPorts
+		e.hostAccessPorts = hostAccessPorts
 		return nil
 	}
 }

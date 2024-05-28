@@ -103,7 +103,7 @@ func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRe
 	}
 }
 
-// WithNetwork allows to add a custom network
+// WithNetwork allows to add a custom network.
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
@@ -111,7 +111,7 @@ func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
 	}
 }
 
-// WithNetworkAlias allows to add a custom network alias for a specific network
+// WithNetworkAlias allows to add a custom network alias for a specific network.
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
@@ -123,7 +123,7 @@ func WithNetworkAlias(networkName, networkAlias string) testcontainers.Customize
 	}
 }
 
-// WithEnv allows to add an environment variable
+// WithEnv allows to add an environment variable.
 func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.Env == nil {
@@ -135,7 +135,16 @@ func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
 	}
 }
 
-// HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed
+// WithHostAccessPorts allows to set the host access ports.
+func WithHostAccessPorts(hostAccessPorts []int) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		req.HostAccessPorts = hostAccessPorts
+
+		return nil
+	}
+}
+
+// HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed.
 // (you'd have to append '/api' to access APIs)
 func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) (string, error) {
 	ip, err := container.Host(ctx)

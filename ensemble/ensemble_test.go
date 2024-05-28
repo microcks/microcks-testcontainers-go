@@ -103,6 +103,7 @@ func TestAsyncFeatureSetup(t *testing.T) {
 	ens, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithAsyncFeature(),
+		ensemble.WithHostAccessPorts([]int{8080}),
 	)
 	require.NoError(t, err)
 
