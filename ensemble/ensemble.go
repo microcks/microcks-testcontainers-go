@@ -21,6 +21,7 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
+	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/async"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
@@ -268,6 +269,14 @@ func WithHostAccessPorts(hostAccessPorts []int) Option {
 func WithKafkaConnection(connection kafka.Connection) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.asyncMinionContainerOptions.Add(async.WithKafkaConnection(connection))
+		return nil
+	}
+}
+
+// WithSecret creates a new secret.
+func WithSecret(s client.Secret) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(microcks.WithSecret(s))
 		return nil
 	}
 }

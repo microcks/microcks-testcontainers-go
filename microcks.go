@@ -45,9 +45,15 @@ const (
 	DefaultNetworkAlias = "microcks"
 )
 
+// Secret represents a secret interface
+type Secret interface {
+}
+
 // MicrocksContainer represents the Microcks container type used in the module.
 type MicrocksContainer struct {
 	testcontainers.Container
+
+	secrets []Secret
 }
 
 // RunContainer creates an instance of the MicrocksContainer type.
@@ -141,6 +147,20 @@ func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
 func WithHostAccessPorts(hostAccessPorts []int) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		req.HostAccessPorts = hostAccessPorts
+
+		return nil
+	}
+}
+
+// WithSecret allows to add a new secret.
+func WithSecret(s client.Secret) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				createSecretHook(s),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
 
 		return nil
 	}
@@ -315,6 +335,35 @@ func (container *MicrocksContainer) importArtifact(ctx context.Context, artifact
 	}
 
 	response, err := c.UploadArtifactWithBody(ctx, nil, writer.FormDataContentType(), body)
+	if err != nil {
+		return 0, err
+	}
+	return response.StatusCode, err
+}
+
+func createSecretHook(s client.Secret) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		_, err := microcksContainer.createSecret(ctx, s)
+		return err
+	}
+}
+
+func (container *MicrocksContainer) createSecret(ctx context.Context, s client.Secret) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client.
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Create secret.
+	response, err := c.CreateSecret(ctx, s, nil)
 	if err != nil {
 		return 0, err
 	}

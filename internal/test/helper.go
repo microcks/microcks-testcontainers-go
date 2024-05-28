@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	kafkaTC "github.com/testcontainers/testcontainers-go/modules/kafka"
+	"github.com/testcontainers/testcontainers-go/modules/localstack"
 	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/async"
@@ -217,6 +218,10 @@ func MicrocksAsyncKafkaMockingFunctionality(t *testing.T, ctx context.Context, k
 			return
 		}
 	}
+}
+
+// MicrocksAsyncAmazonSQSContractTestingFunctionality tests the Microcks async Amazon SQS mocking functionality.
+func MicrocksAsyncAmazonSQSContractTestingFunctionality(t *testing.T, ctx context.Context, localstackContainer *localstack.LocalStackContainer, microcksAsyncMinionContainer *async.MicrocksAsyncMinionContainer) {
 }
 
 // AssertBadImplementation helps to assert the endpoint with a bad implementation.
