@@ -194,3 +194,30 @@ testResult := ensemble.
     GetMicrocksContainer().
     TestEndpoint(context.Background(), testRequest);
 ```
+
+#### Asynchronous API support
+
+Asynchronous API feature need to be explicitly enabled as well. In the case you want to use it for mocking purposes,
+you'll have to specify additional connection details to the broker of your choice. See an example below with connection
+to a Kafka broker:
+
+```go
+ensembleContainers, err := ensemble.RunContainers(ctx,
+	// ...
+	ensemble.WithAsyncFeature(),
+	ensemble.WithKafkaConnection(kafka.Connection{
+		BootstrapServers: "kafka:9092",
+	}),
+)
+```
+
+##### Using mock endpoints for your dependencies
+
+Once started, the `ensembleContainers.GetAsyncMinionContainer()` provides methods for retrieving mock endpoint names for the different
+supported protocols (WebSocket, Kafka, SQS and SNS).
+
+```go
+kafkaTopic := ensembleContainers.
+	GetAsyncMinionContainer().
+	KafkaMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders")
+```
