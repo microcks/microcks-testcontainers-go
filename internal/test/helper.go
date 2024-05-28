@@ -21,16 +21,21 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
+	"microcks.io/testcontainers-go/ensemble/async"
 )
 
-// ConfigRetrieval tests the configuration
+// ConfigRetrieval tests the configuration.
 func ConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	uri, err := microcksContainer.HttpEndpoint(ctx)
 	require.NoError(t, err)
@@ -40,7 +45,7 @@ func ConfigRetrieval(t *testing.T, ctx context.Context, microcksContainer *micro
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// MockEndpoints tests the mock endpoints
+// MockEndpoints tests the mock endpoints.
 func MockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	endpoint, err := microcksContainer.HttpEndpoint(ctx)
 	require.NoError(t, err)
@@ -68,7 +73,7 @@ func MockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microck
 	require.Equal(t, "grpc://"+ip+":"+port.Port(), baseGrpcUrl)
 }
 
-// MicrocksMockingFunctionality tests the Microcks mocking functionality
+// MicrocksMockingFunctionality tests the Microcks mocking functionality.
 func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	baseApiUrl, err := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
 	require.NoError(t, err)
@@ -77,7 +82,7 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	// Unmarshal body using a generic interface
+	// Unmarshal body using a generic interface.
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
@@ -91,7 +96,7 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	// Unmarshal body using a generic interface
+	// Unmarshal body using a generic interface.
 	body, err = io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
@@ -101,7 +106,63 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }
 
-// AssertBadImplementation helps to assert the endpoint with a bad implementation
+// MicrocksAsyncMockingFunctionality tests the Microcks aync mocking functionality.
+func MicrocksAsyncMockingFunctionality(t *testing.T, ctx context.Context, microcksAsyncMinionContainer *async.MicrocksAysncMinionContainer) {
+	wsEndpoint, err := microcksAsyncMinionContainer.WSMockEndpoint(ctx, "Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders")
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+	expectedMessage := "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}"
+
+	// Check signals.
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	// Connect to websocket.
+	c, _, err := websocket.DefaultDialer.Dial(wsEndpoint, nil)
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+	defer c.Close()
+
+	// Receive messages.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				return
+			}
+			require.Equal(t, expectedMessage, string(message))
+		}
+	}()
+
+	for {
+		select {
+		// Wait 7 seconds for messages from Async Minion WebSocket to get at least 2 messages.
+		case <-time.After(7 * time.Second):
+			return
+		case <-done:
+			return
+		case <-interrupt:
+			// Cleanly close the connection.
+			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				return
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+			}
+			return
+		}
+	}
+}
+
+// AssertBadImplementation helps to assert the endpoint with a bad implementation.
 func AssertBadImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Build a new TestRequest.
 	testRequest := client.TestRequest{
@@ -128,7 +189,7 @@ func AssertBadImplementation(t *testing.T, ctx context.Context, microcksContaine
 	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
 }
 
-// AssertGoodImplementation helps to assert the endpoint with a good implementation
+// AssertGoodImplementation helps to assert the endpoint with a good implementation.
 func AssertGoodImplementation(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	// Switch endpoint to the correct implementation.
 	testRequest := client.TestRequest{
@@ -152,7 +213,7 @@ func AssertGoodImplementation(t *testing.T, ctx context.Context, microcksContain
 	}
 }
 
-// MicrocksContractTestingFunctionality helps to assert contract testing functionality
+// MicrocksContractTestingFunctionality helps to assert contract testing functionality.
 func MicrocksContractTestingFunctionality(
 	t *testing.T,
 	ctx context.Context,
@@ -160,7 +221,7 @@ func MicrocksContractTestingFunctionality(
 	badImpl,
 	goodImpl testcontainers.Container) {
 
-	// Bad implementation
+	// Bad implementation.
 	testRequestBad := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
 		RunnerType:   client.TestRunnerTypePOSTMAN,
@@ -176,14 +237,14 @@ func MicrocksContractTestingFunctionality(
 		require.False(t, r.Success)
 	}
 
-	// Check nil first step result message
+	// Check nil first step result message.
 	t0bad := (*testResultBad.TestCaseResults)[0].TestStepResults
 	require.NotNil(t, t0bad)
 	s0bad := (*t0bad)[0]
 	require.NotNil(t, s0bad)
 	require.True(t, strings.Contains(*s0bad.Message, "Valid"), "Message not contain Valid word", *s0bad.Message)
 
-	// Good implementation
+	// Good implementation.
 	testRequestGood := client.TestRequest{
 		ServiceId:    "API Pastries:0.0.1",
 		RunnerType:   client.TestRunnerTypePOSTMAN,
@@ -199,7 +260,7 @@ func MicrocksContractTestingFunctionality(
 		require.True(t, r.Success)
 	}
 
-	// Check nil first step result message
+	// Check nil first step result message.
 	t0good := (*testResultGood.TestCaseResults)[0].TestStepResults
 	require.NotNil(t, t0good)
 	s0good := (*t0good)[0]
@@ -219,7 +280,7 @@ func WithNetwork(network string) testcontainers.CustomizeRequestOption {
 	}
 }
 
-// PrintMicrocksContainerLogs prints the Microcks container logs
+// PrintMicrocksContainerLogs prints the Microcks container logs.
 func PrintMicrocksContainerLogs(t *testing.T, ctx context.Context, microcksContainer *microcks.MicrocksContainer) {
 	readCloser, err := microcksContainer.Logs(ctx)
 	require.NoError(t, err)

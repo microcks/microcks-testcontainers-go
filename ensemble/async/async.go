@@ -17,6 +17,7 @@ package async
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -124,4 +125,30 @@ func WithKafkaConnection(connection kafka.Connection) Option {
 		minion.containerOptions.Add(WithEnv("KAFKA_BOOTSTRAP_SERVER", connection.BootstrapServers))
 		return nil
 	}
+}
+
+// WSMockEndpoint gets the exposed mock endpoints for a WebSocket Service.
+func (container *MicrocksAysncMinionContainer) WSMockEndpoint(ctx context.Context, service, version, operationName string) (string, error) {
+	host, err := container.Host(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	port, err := container.MappedPort(ctx, DefaultHttpPort)
+	if err != nil {
+		return "", err
+	}
+
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+
+	return fmt.Sprintf(
+		"ws://%s:%s/api/ws/%s/%s/%s",
+		host,
+		port.Port(),
+		strings.ReplaceAll(service, " ", "+"),
+		strings.ReplaceAll(version, " ", "+"),
+		operationName,
+	), nil
 }

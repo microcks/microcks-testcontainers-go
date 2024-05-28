@@ -14,27 +14,30 @@ import (
 func TestMockingFunctionalityAtStartup(t *testing.T) {
 	ctx := context.Background()
 
+	// Ensemble.
 	ec, err := ensemble.RunContainers(ctx,
 		ensemble.WithMainArtifact("../testdata/apipastries-openapi.yaml"),
 		ensemble.WithSecondaryArtifact("../testdata/apipastries-postman-collection.json"),
 	)
 	require.NoError(t, err)
+
+	// Cleanup containers.
 	t.Cleanup(func() {
 		if err := ec.Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
 
+	// Tests & assertions.
 	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
 	test.MockEndpoints(t, ctx, ec.GetMicrocksContainer())
-
 	test.MicrocksMockingFunctionality(t, ctx, ec.GetMicrocksContainer())
 }
 
 func TestPostmanContractTestingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
-	// Ensemble
+	// Ensemble.
 	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithMainArtifact("../testdata/apipastries-openapi.yaml"),
@@ -44,7 +47,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 	require.NoError(t, err)
 	networkName := ec.GetNetwork().Name
 
-	// Demo pastry bad implementation
+	// Demo pastry bad implementation.
 	badImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:    "quay.io/microcks/contract-testing-demo:02",
@@ -58,7 +61,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Demo pastry good implementation
+	// Demo pastry good implementation.
 	goodImpl, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:    "quay.io/microcks/contract-testing-demo:03",
@@ -72,7 +75,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Cleanup containers
+	// Cleanup containers.
 	t.Cleanup(func() {
 		if err := ec.GetMicrocksContainer().Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
@@ -85,7 +88,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 		}
 	})
 
-	// Tests & assertions
+	// Tests & assertions.
 	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
 	test.MicrocksContractTestingFunctionality(
 		t,
@@ -99,21 +102,44 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 func TestAsyncFeatureSetup(t *testing.T) {
 	ctx := context.Background()
 
-	// Ensemble
-	ens, err := ensemble.RunContainers(
+	// Ensemble.
+	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithAsyncFeature(),
 		ensemble.WithHostAccessPorts([]int{8080}),
 	)
 	require.NoError(t, err)
 
-	// Cleanup containers
+	// Cleanup containers.
 	t.Cleanup(func() {
-		if err := ens.Terminate(ctx); err != nil {
+		if err := ec.Terminate(ctx); err != nil {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
 
-	// Tests & assertions
-	test.ConfigRetrieval(t, ctx, ens.GetMicrocksContainer())
+	// Tests & assertions.
+	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
+}
+
+func TestAsyncFeatureMockingFunctionality(t *testing.T) {
+	ctx := context.Background()
+
+	// Ensemble.
+	ec, err := ensemble.RunContainers(
+		ctx,
+		ensemble.WithAsyncFeature(),
+		ensemble.WithMainArtifact("../testdata/pastry-orders-asyncapi.yaml"),
+	)
+	require.NoError(t, err)
+
+	// Cleanup containers.
+	t.Cleanup(func() {
+		if err := ec.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+
+	// Tests & assertions.
+	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
+	test.MicrocksAsyncMockingFunctionality(t, ctx, ec.GetAsyncMinionContainer())
 }
