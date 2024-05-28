@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -27,9 +28,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
+	kafkaTC "github.com/testcontainers/testcontainers-go/modules/kafka"
 	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/async"
@@ -106,8 +109,8 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
 }
 
-// MicrocksAsyncMockingFunctionality tests the Microcks aync mocking functionality.
-func MicrocksAsyncMockingFunctionality(t *testing.T, ctx context.Context, microcksAsyncMinionContainer *async.MicrocksAysncMinionContainer) {
+// MicrocksAsyncMockingFunctionality tests the Microcks async mocking functionality.
+func MicrocksAsyncMockingFunctionality(t *testing.T, ctx context.Context, microcksAsyncMinionContainer *async.MicrocksAsyncMinionContainer) {
 	wsEndpoint, err := microcksAsyncMinionContainer.WSMockEndpoint(ctx, "Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders")
 	if err != nil {
 		require.NoError(t, err)
@@ -157,6 +160,60 @@ func MicrocksAsyncMockingFunctionality(t *testing.T, ctx context.Context, microc
 			case <-done:
 			case <-time.After(time.Second):
 			}
+			return
+		}
+	}
+}
+
+// MicrocksAsyncKafkaMockingFunctionality tests the Microcks async Kafka mocking functionality.
+func MicrocksAsyncKafkaMockingFunctionality(t *testing.T, ctx context.Context, kafkaContainer *kafkaTC.KafkaContainer, microcksAsyncMinionContainer *async.MicrocksAsyncMinionContainer) {
+	kafkaTopic := microcksAsyncMinionContainer.KafkaMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders")
+	expectedMessage := "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}"
+
+	brokers, err := kafkaContainer.Brokers(ctx)
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+
+	randomID := fmt.Sprintf("random-%d", time.Now().UnixMilli())
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":  brokers[0],
+		"group.id":           randomID,
+		"client.id":          randomID,
+		"auto.offset.reset":  "latest",
+		"enable.auto.commit": false,
+	})
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+	defer c.Close()
+
+	if err := c.Subscribe(kafkaTopic, nil); err != nil {
+		require.NoError(t, err)
+		return
+	}
+
+	// Receive messages.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			message, err := c.ReadMessage(time.Second)
+			if err != nil {
+				return
+			}
+			require.Equal(t, expectedMessage, message.String())
+		}
+	}()
+
+	for {
+		select {
+		// Wait 7 seconds for messages from Async Minion Kafka to get at least 2 messages.
+		case <-time.After(7 * time.Second):
+			return
+		case <-done:
 			return
 		}
 	}
@@ -285,7 +342,7 @@ func PrintMicrocksContainerLogs(t *testing.T, ctx context.Context, microcksConta
 	readCloser, err := microcksContainer.Logs(ctx)
 	require.NoError(t, err)
 
-	// example to read data
+	// Example to read data.
 	buf := new(bytes.Buffer)
 	numOfByte, err := buf.ReadFrom(readCloser)
 	require.NoError(t, err)

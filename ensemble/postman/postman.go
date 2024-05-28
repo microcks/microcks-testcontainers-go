@@ -25,10 +25,10 @@ import (
 const (
 	defaultImage = "quay.io/microcks/microcks-postman-runtime:latest"
 
-	// DefaultHTTPPort represents the default Postman HTTP port
+	// DefaultHTTPPort represents the default Postman HTTP port.
 	DefaultHTTPPort = "3000/tcp"
 
-	// DefaultNetworkAlias represents the default network alias of the the PostmanContainer
+	// DefaultNetworkAlias represents the default network alias of the the PostmanContainer.
 	DefaultNetworkAlias = "postman"
 )
 
@@ -37,7 +37,7 @@ type PostmanContainer struct {
 	testcontainers.Container
 }
 
-// RunContainer runs the Postman container
+// RunContainer runs the Postman container.
 func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*PostmanContainer, error) {
 	req := testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
@@ -60,7 +60,8 @@ func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomize
 	return &PostmanContainer{Container: container}, nil
 }
 
-// WithNetwork allows to add a custom network
+// WithNetwork allows to add a custom network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
@@ -69,7 +70,8 @@ func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
 	}
 }
 
-// WithNetworkAlias allows to add a custom network alias for a specific network
+// WithNetworkAlias allows to add a custom network alias for a specific network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {

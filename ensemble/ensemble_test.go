@@ -6,15 +6,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
+	kafkaTC "github.com/testcontainers/testcontainers-go/modules/kafka"
+	"github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"microcks.io/testcontainers-go/ensemble"
+	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 	"microcks.io/testcontainers-go/internal/test"
 )
 
 func TestMockingFunctionalityAtStartup(t *testing.T) {
 	ctx := context.Background()
 
-	// Ensemble.
+	// Ensemble containers.
 	ec, err := ensemble.RunContainers(ctx,
 		ensemble.WithMainArtifact("../testdata/apipastries-openapi.yaml"),
 		ensemble.WithSecondaryArtifact("../testdata/apipastries-postman-collection.json"),
@@ -37,7 +40,7 @@ func TestMockingFunctionalityAtStartup(t *testing.T) {
 func TestPostmanContractTestingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
-	// Ensemble.
+	// Ensemble containers.
 	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithMainArtifact("../testdata/apipastries-openapi.yaml"),
@@ -102,7 +105,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 func TestAsyncFeatureSetup(t *testing.T) {
 	ctx := context.Background()
 
-	// Ensemble.
+	// Ensemble containers.
 	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithAsyncFeature(),
@@ -124,7 +127,7 @@ func TestAsyncFeatureSetup(t *testing.T) {
 func TestAsyncFeatureMockingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
-	// Ensemble.
+	// Ensemble containers.
 	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithAsyncFeature(),
@@ -142,4 +145,61 @@ func TestAsyncFeatureMockingFunctionality(t *testing.T) {
 	// Tests & assertions.
 	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
 	test.MicrocksAsyncMockingFunctionality(t, ctx, ec.GetAsyncMinionContainer())
+}
+
+func TestAsyncKafkaMockingFunctionality(t *testing.T) {
+	ctx := context.Background()
+
+	// Common network.
+	net, err := network.New(ctx, network.WithCheckDuplicate())
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+
+	// Kafka container.
+	kc, err := kafkaTC.RunContainer(ctx,
+		testcontainers.WithImage("confluentinc/confluent-local:7.5.0"),
+		network.WithNetwork([]string{"kafka"}, net),
+	)
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+	brokers, err := kc.Brokers(ctx)
+	if err != nil {
+		require.NoError(t, err)
+		return
+	}
+
+	// Ensemble containers.
+	ec, err := ensemble.RunContainers(
+		ctx,
+		ensemble.WithAsyncFeature(),
+		ensemble.WithMainArtifact("../testdata/pastry-orders-asyncapi.yaml"),
+		ensemble.WithKafkaConnection(kafka.Connection{
+			BootstrapServers: brokers[0],
+		}),
+		ensemble.WithNetwork(net),
+	)
+	require.NoError(t, err)
+
+	// Cleanup containers.
+	t.Cleanup(func() {
+		if err := ec.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+		if err := kc.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate Kafka container: %s", err)
+		}
+	})
+
+	// Tests & assertions.
+	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
+	test.MicrocksAsyncKafkaMockingFunctionality(
+		t,
+		ctx,
+		kc,
+		ec.GetAsyncMinionContainer(),
+	)
 }

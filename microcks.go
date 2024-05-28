@@ -35,13 +35,13 @@ import (
 const (
 	defaultImage = "quay.io/microcks/microcks-uber:latest"
 
-	// DefaultHttpPort represents the default Microcks HTTP port
+	// DefaultHttpPort represents the default Microcks HTTP port.
 	DefaultHttpPort = "8080/tcp"
 
-	// DefaultGrpcPort represents the default Microcks GRPC port
+	// DefaultGrpcPort represents the default Microcks GRPC port.
 	DefaultGrpcPort = "9090/tcp"
 
-	// DefaultNetworkAlias represents the default network alias of the the MicrocksContainer
+	// DefaultNetworkAlias represents the default network alias of the the MicrocksContainer.
 	DefaultNetworkAlias = "microcks"
 )
 
@@ -104,6 +104,7 @@ func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRe
 }
 
 // WithNetwork allows to add a custom network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
@@ -112,6 +113,7 @@ func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
 }
 
 // WithNetworkAlias allows to add a custom network alias for a specific network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
@@ -241,7 +243,7 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 		// Wait an initial delay to avoid inefficient poll.
 		time.Sleep(100 * time.Millisecond)
 
-		// Compute future time that is the end of waiting timeframe.
+		// Compute future time that is the end of waiting time frame.
 		future := nowInMilliseconds() + int64(testRequest.Timeout)
 		for nowInMilliseconds() < future {
 			testResultResponse, err := c.GetTestResultWithResponse(ctx, testResultId)
