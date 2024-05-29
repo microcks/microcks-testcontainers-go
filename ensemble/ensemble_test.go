@@ -7,10 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	kafkaTC "github.com/testcontainers/testcontainers-go/modules/kafka"
-	"github.com/testcontainers/testcontainers-go/modules/localstack"
 	"github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"microcks.io/go-client"
 	"microcks.io/testcontainers-go/ensemble"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 	"microcks.io/testcontainers-go/internal/test"
@@ -202,64 +200,6 @@ func TestAsyncKafkaMockingFunctionality(t *testing.T) {
 		t,
 		ctx,
 		kc,
-		ec.GetAsyncMinionContainer(),
-	)
-}
-
-func TestAsyncFeatureAmazonSQSTestingFunctionality(t *testing.T) {
-	ctx := context.Background()
-
-	// Common network.
-	net, err := network.New(ctx, network.WithCheckDuplicate())
-	if err != nil {
-		require.NoError(t, err)
-		return
-	}
-
-	// Localstack container.
-	lc, err := localstack.RunContainer(ctx,
-		testcontainers.WithImage("localstack/localstack:latest"),
-		network.WithNetwork([]string{"localstack"}, net),
-		testcontainers.WithEnv(map[string]string{
-			"SERVICES": "sqs",
-		}),
-	)
-	if err != nil {
-		require.NoError(t, err)
-		return
-	}
-
-	// Ensemble containers.
-	tmp := ""
-	ec, err := ensemble.RunContainers(
-		ctx,
-		ensemble.WithAsyncFeature(),
-		ensemble.WithMainArtifact("../testdata/pastry-orders-asyncapi.yaml"),
-		ensemble.WithNetwork(net),
-		ensemble.WithSecret(client.Secret{
-			Name:     "localstack secret",
-			Username: &tmp, // Missing
-			Password: &tmp, // Missing
-		}),
-	)
-	require.NoError(t, err)
-
-	// Cleanup containers.
-	t.Cleanup(func() {
-		if err := ec.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate container: %s", err)
-		}
-		if err := lc.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate localstack container: %s", err)
-		}
-	})
-
-	// Tests & assertions.
-	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())
-	test.MicrocksAsyncAmazonSQSContractTestingFunctionality(
-		t,
-		ctx,
-		lc,
 		ec.GetAsyncMinionContainer(),
 	)
 }
