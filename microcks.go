@@ -45,15 +45,9 @@ const (
 	DefaultNetworkAlias = "microcks"
 )
 
-// Secret represents a secret interface
-type Secret interface {
-}
-
 // MicrocksContainer represents the Microcks container type used in the module.
 type MicrocksContainer struct {
 	testcontainers.Container
-
-	secrets []Secret
 }
 
 // RunContainer creates an instance of the MicrocksContainer type.
