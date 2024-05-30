@@ -21,29 +21,33 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
+	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/async"
+	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 	"microcks.io/testcontainers-go/ensemble/postman"
 )
 
-// Option represents an option to pass to the ensemble
+// Option represents an option to pass to the ensemble.
 type Option func(*MicrocksContainersEnsemble) error
 
-// ContainerOptions represents the container options
+// ContainerOptions represents the container options.
 type ContainerOptions struct {
 	list []testcontainers.ContainerCustomizer
 }
 
-// Add adds an option to the list
+// Add adds an option to the list.
 func (co *ContainerOptions) Add(opt testcontainers.ContainerCustomizer) {
 	co.list = append(co.list, opt)
 }
 
-// MicrocksContainersEnsemble represents the ensemble of containers
+// MicrocksContainersEnsemble represents the ensemble of containers.
 type MicrocksContainersEnsemble struct {
 	ctx context.Context
 
 	network *testcontainers.DockerNetwork
+
+	hostAccessPorts []int
 
 	microcksContainer        *microcks.MicrocksContainer
 	microcksContainerOptions ContainerOptions
@@ -53,45 +57,45 @@ type MicrocksContainersEnsemble struct {
 	postmanContainerOptions ContainerOptions
 
 	asyncEnabled                bool
-	asyncMinionContainer        *async.MicrocksAysncMinionContainer
+	asyncMinionContainer        *async.MicrocksAsyncMinionContainer
 	asyncMinionContainerOptions ContainerOptions
 }
 
-// GetNetwork returns the ensemble network
+// GetNetwork returns the ensemble network.
 func (ec *MicrocksContainersEnsemble) GetNetwork() *testcontainers.DockerNetwork {
 	return ec.network
 }
 
-// GetMicrocksContainer returns the Microcks container
+// GetMicrocksContainer returns the Microcks container.
 func (ec *MicrocksContainersEnsemble) GetMicrocksContainer() *microcks.MicrocksContainer {
 	return ec.microcksContainer
 }
 
-// GetPostmanContainer returns the Postman container
+// GetPostmanContainer returns the Postman container.
 func (ec *MicrocksContainersEnsemble) GetPostmanContainer() *postman.PostmanContainer {
 	return ec.postmanContainer
 }
 
-// GetAsyncMinionContainer returns the Async Minion container
-func (ec *MicrocksContainersEnsemble) GetAsyncMinionContainer() *async.MicrocksAysncMinionContainer {
+// GetAsyncMinionContainer returns the Async Minion container.
+func (ec *MicrocksContainersEnsemble) GetAsyncMinionContainer() *async.MicrocksAsyncMinionContainer {
 	return ec.asyncMinionContainer
 }
 
-// Terminate helps to terminate all containers
+// Terminate helps to terminate all containers.
 func (ec *MicrocksContainersEnsemble) Terminate(ctx context.Context) error {
-	// Main Microcks container
+	// Main Microcks container.
 	if err := ec.microcksContainer.Terminate(ctx); err != nil {
 		return err
 	}
 
-	// Postman container
+	// Postman container.
 	if ec.postmanEnabled {
 		if err := ec.postmanContainer.Terminate(ctx); err != nil {
 			return err
 		}
 	}
 
-	// Async minion container
+	// Async Microcks minion container.
 	if ec.asyncEnabled {
 		if err := ec.asyncMinionContainer.Terminate(ctx); err != nil {
 			return err
@@ -101,14 +105,14 @@ func (ec *MicrocksContainersEnsemble) Terminate(ctx context.Context) error {
 	return nil
 }
 
-// RunContainers creates instances of the Microcks Ensemble
+// RunContainers creates instances of the Microcks Ensemble.
 // Using sequential start to avoid resource contention on CI systems with weaker hardware.
 func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnsemble, error) {
 	var err error
 
 	ensemble := &MicrocksContainersEnsemble{ctx: ctx}
 
-	// Options
+	// Options.
 	defaults := []Option{WithDefaultNetwork()}
 	options := append(defaults, opts...)
 	for _, opt := range options {
@@ -117,7 +121,7 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 		}
 	}
 
-	// Set microcks container env variables
+	// Set microcks container env variables.
 	testCallbackURL := strings.Join([]string{"http://", microcks.DefaultNetworkAlias, ":8080"}, "")
 	postmanRunnerURL := strings.Join([]string{"http://", postman.DefaultNetworkAlias, ":3000"}, "")
 	asyncMinionURL := strings.Join([]string{"http://", async.DefaultNetworkAlias, ":8081"}, "")
@@ -126,12 +130,18 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	ensemble.microcksContainerOptions.Add(microcks.WithEnv("POSTMAN_RUNNER_URL", postmanRunnerURL))
 	ensemble.microcksContainerOptions.Add(microcks.WithEnv("ASYNC_MINION_URL", asyncMinionURL))
 
+	// Start default Microcks container.
+	if len(ensemble.hostAccessPorts) > 0 {
+		ensemble.microcksContainerOptions.Add(
+			microcks.WithHostAccessPorts(ensemble.hostAccessPorts),
+		)
+	}
 	ensemble.microcksContainer, err = microcks.RunContainer(ctx, ensemble.microcksContainerOptions.list...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Start Postman container if enabled
+	// Start Postman container if enabled.
 	if ensemble.postmanEnabled {
 		ensemble.postmanContainer, err = postman.RunContainer(ctx, ensemble.postmanContainerOptions.list...)
 		if err != nil {
@@ -139,7 +149,7 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 		}
 	}
 
-	// String Async minion container if enabled
+	// Start Microcks async minion container if enabled.
 	if ensemble.asyncEnabled {
 		microcksHostPort := strings.Join([]string{microcks.DefaultNetworkAlias, ":8080"}, "")
 		ensemble.asyncMinionContainer, err = async.RunContainer(ctx, microcksHostPort, ensemble.asyncMinionContainerOptions.list...)
@@ -151,7 +161,7 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	return ensemble, nil
 }
 
-// WithMicrocksImage helps to use specific Microcks image
+// WithMicrocksImage helps to use specific Microcks image.
 func WithMicrocksImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.microcksContainerOptions.Add(testcontainers.WithImage(image))
@@ -167,7 +177,7 @@ func WithAsyncFeature() Option {
 	}
 }
 
-// WithAsyncFeatureImage enabled the Async Feature container with specific image
+// WithAsyncFeatureImage enabled the Async Feature container with specific image.
 func WithAsyncFeatureImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.asyncMinionContainerOptions.Add(testcontainers.WithImage(image))
@@ -176,7 +186,7 @@ func WithAsyncFeatureImage(image string) Option {
 	}
 }
 
-// WithPostman allows to enable Postman container
+// WithPostman allows to enable Postman container.
 func WithPostman(enable bool) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.postmanEnabled = enable
@@ -184,7 +194,7 @@ func WithPostman(enable bool) Option {
 	}
 }
 
-// WithPostmanImage helps to use specific Postman image
+// WithPostmanImage helps to use specific Postman image.
 func WithPostmanImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.postmanContainerOptions.Add(testcontainers.WithImage(image))
@@ -193,7 +203,7 @@ func WithPostmanImage(image string) Option {
 	}
 }
 
-// WithDefaultNetwork allows to use a default network
+// WithDefaultNetwork allows to use a default network.
 func WithDefaultNetwork() Option {
 	return func(e *MicrocksContainersEnsemble) (err error) {
 		e.network, err = network.New(e.ctx, network.WithCheckDuplicate())
@@ -212,7 +222,7 @@ func WithDefaultNetwork() Option {
 	}
 }
 
-// WithNetwork allows to define the network
+// WithNetwork allows to define the network.
 func WithNetwork(network *testcontainers.DockerNetwork) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.network = network
@@ -242,6 +252,31 @@ func WithMainArtifact(artifactFilePath string) Option {
 func WithSecondaryArtifact(artifactFilePath string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.microcksContainerOptions.Add(microcks.WithSecondaryArtifact(artifactFilePath))
+		return nil
+	}
+}
+
+// WithHostAccessPorts helps to open connections between Microcks, Postman or Microcks async
+// to the user's host ports.
+func WithHostAccessPorts(hostAccessPorts []int) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.hostAccessPorts = hostAccessPorts
+		return nil
+	}
+}
+
+// WithKafkaConnection configures the Kafka connection.
+func WithKafkaConnection(connection kafka.Connection) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(async.WithKafkaConnection(connection))
+		return nil
+	}
+}
+
+// WithSecret creates a new secret.
+func WithSecret(s client.Secret) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(microcks.WithSecret(s))
 		return nil
 	}
 }

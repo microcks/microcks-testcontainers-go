@@ -35,13 +35,13 @@ import (
 const (
 	defaultImage = "quay.io/microcks/microcks-uber:latest"
 
-	// DefaultHttpPort represents the default Microcks HTTP port
+	// DefaultHttpPort represents the default Microcks HTTP port.
 	DefaultHttpPort = "8080/tcp"
 
-	// DefaultGrpcPort represents the default Microcks GRPC port
+	// DefaultGrpcPort represents the default Microcks GRPC port.
 	DefaultGrpcPort = "9090/tcp"
 
-	// DefaultNetworkAlias represents the default network alias of the the MicrocksContainer
+	// DefaultNetworkAlias represents the default network alias of the the MicrocksContainer.
 	DefaultNetworkAlias = "microcks"
 )
 
@@ -91,44 +91,76 @@ func WithSecondaryArtifact(artifactFilePath string) testcontainers.CustomizeRequ
 // WithArtifact provides paths to artifacts that will be imported within the Microcks container.
 // Once it will be started and healthy.
 func WithArtifact(artifactFilePath string, main bool) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		hooks := testcontainers.ContainerLifecycleHooks{
 			PostReadies: []testcontainers.ContainerHook{
 				importArtifactHook(artifactFilePath, main),
 			},
 		}
 		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+
+		return nil
 	}
 }
 
-// WithNetwork allows to add a custom network
+// WithNetwork allows to add a custom network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
+		return nil
 	}
 }
 
-// WithNetworkAlias allows to add a custom network alias for a specific network
+// WithNetworkAlias allows to add a custom network alias for a specific network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
 			req.NetworkAliases = make(map[string][]string)
 		}
 		req.NetworkAliases[networkName] = []string{networkAlias}
+
+		return nil
 	}
 }
 
-// WithEnv allows to add an environment variable
+// WithEnv allows to add an environment variable.
 func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.Env == nil {
 			req.Env = make(map[string]string)
 		}
 		req.Env[key] = value
+
+		return nil
 	}
 }
 
-// HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed
+// WithHostAccessPorts allows to set the host access ports.
+func WithHostAccessPorts(hostAccessPorts []int) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		req.HostAccessPorts = hostAccessPorts
+
+		return nil
+	}
+}
+
+// WithSecret allows to add a new secret.
+func WithSecret(s client.Secret) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				createSecretHook(s),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+
+		return nil
+	}
+}
+
+// HttpEndpoint allows retrieving the Http endpoint where Microcks can be accessed.
 // (you'd have to append '/api' to access APIs)
 func (container *MicrocksContainer) HttpEndpoint(ctx context.Context) (string, error) {
 	ip, err := container.Host(ctx)
@@ -225,7 +257,7 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 		// Wait an initial delay to avoid inefficient poll.
 		time.Sleep(100 * time.Millisecond)
 
-		// Compute future time that is the end of waiting timeframe.
+		// Compute future time that is the end of waiting time frame.
 		future := nowInMilliseconds() + int64(testRequest.Timeout)
 		for nowInMilliseconds() < future {
 			testResultResponse, err := c.GetTestResultWithResponse(ctx, testResultId)
@@ -297,6 +329,35 @@ func (container *MicrocksContainer) importArtifact(ctx context.Context, artifact
 	}
 
 	response, err := c.UploadArtifactWithBody(ctx, nil, writer.FormDataContentType(), body)
+	if err != nil {
+		return 0, err
+	}
+	return response.StatusCode, err
+}
+
+func createSecretHook(s client.Secret) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		_, err := microcksContainer.createSecret(ctx, s)
+		return err
+	}
+}
+
+func (container *MicrocksContainer) createSecret(ctx context.Context, s client.Secret) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client.
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Create secret.
+	response, err := c.CreateSecret(ctx, s, nil)
 	if err != nil {
 		return 0, err
 	}

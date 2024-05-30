@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package kafka
 
-// KafkaConnection represents a Kafka broker connection settings.
-type KafkaConnection struct {
-	bootstrapServers string
-}
-
-// AmazonServiceConnection represents an Amazon service connection settings.
-type AmazonServiceConnection struct {
-	region           string
-	endpointOverride string
-	accessKey        string
-	secretKey        string
+// Connection represents broker connection settings.
+type Connection struct {
+	// BootstrapServers represents the list of bootstrap servers.
+	BootstrapServers string
 }

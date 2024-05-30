@@ -17,10 +17,12 @@ package async
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 )
 
 const (
@@ -34,7 +36,7 @@ const (
 )
 
 // Option represents an option to pass to the minion
-type Option func(*MicrocksAysncMinionContainer) error
+type Option func(*MicrocksAsyncMinionContainer) error
 
 // ContainerOptions represents the container options
 type ContainerOptions struct {
@@ -46,76 +48,144 @@ func (co *ContainerOptions) Add(opt testcontainers.ContainerCustomizer) {
 	co.list = append(co.list, opt)
 }
 
-// MicrocksAysncMinionContainer represents the Microcks Async Minion container type used in the module.
-type MicrocksAysncMinionContainer struct {
+// MicrocksAsyncMinionContainer represents the Microcks Async Minion container type used in the module.
+type MicrocksAsyncMinionContainer struct {
 	testcontainers.Container
-
-	extraProtocols string
 
 	containerOptions ContainerOptions
 }
 
-// RunContainer creates an instance of the MicrocksAysncMinionContainer type.
-func RunContainer(ctx context.Context, microcksHostPort string, opts ...testcontainers.ContainerCustomizer) (*MicrocksAysncMinionContainer, error) {
-	req := testcontainers.ContainerRequest{
-		Image:        DefaultImage,
-		ExposedPorts: []string{DefaultHttpPort},
-		WaitingFor:   wait.ForLog("Profile prod activated"),
-		Env:          map[string]string{"MICROCKS_HOST_PORT": microcksHostPort},
-	}
-	genericContainerReq := testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
+// RunContainer creates an instance of the MicrocksAsyncMinionContainer type.
+func RunContainer(ctx context.Context, microcksHostPort string, opts ...testcontainers.ContainerCustomizer) (*MicrocksAsyncMinionContainer, error) {
+	req := testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        DefaultImage,
+			ExposedPorts: []string{DefaultHttpPort},
+			WaitingFor:   wait.ForLog("Profile prod activated"),
+			Env: map[string]string{
+				"MICROCKS_HOST_PORT": microcksHostPort,
+				"ASYNC_PROTOCOLS":    "",
+			},
+		},
+		Started: true,
 	}
 
 	for _, opt := range opts {
-		opt.Customize(&genericContainerReq)
+		opt.Customize(&req)
 	}
 
-	container, err := testcontainers.GenericContainer(ctx, genericContainerReq)
+	container, err := testcontainers.GenericContainer(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return &MicrocksAysncMinionContainer{Container: container}, nil
+	return &MicrocksAsyncMinionContainer{Container: container}, nil
 }
 
-// WithNetwork allows to add a custom network
+// WithNetwork allows to add a custom network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetwork(networkName string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		req.Networks = append(req.Networks, networkName)
+
+		return nil
 	}
 }
 
-// WithNetworkAlias allows to add a custom network alias for a specific network
+// WithNetworkAlias allows to add a custom network alias for a specific network.
+// Deprecated: Use network.WithNetwork from testcontainers instead.
 func WithNetworkAlias(networkName, networkAlias string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.NetworkAliases == nil {
 			req.NetworkAliases = make(map[string][]string)
 		}
 		req.NetworkAliases[networkName] = []string{networkAlias}
+
+		return nil
 	}
 }
 
-// WithEnv allows to add an environment variable
+// WithEnv allows to add an environment variable.
 func WithEnv(key, value string) testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) {
+	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.Env == nil {
 			req.Env = make(map[string]string)
 		}
 		req.Env[key] = value
+
+		return nil
 	}
 }
 
-// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a Kafka server to allow Kafka messages mocking
-func WithKafkaConnection(connection KafkaConnection) Option {
-	return func(minion *MicrocksAysncMinionContainer) error {
-		if !strings.Contains(minion.extraProtocols, ",KAFKA") {
-			minion.extraProtocols = strings.Join([]string{minion.extraProtocols, ",KAFKA"}, "")
+// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a Kafka server to allow Kafka messages mocking.
+func WithKafkaConnection(connection kafka.Connection) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
 		}
+		req.Env["KAFKA_BOOTSTRAP_SERVER"] = connection.BootstrapServers
+		addProtocol(req, "KAFKA")
 
-		minion.containerOptions.Add(WithEnv("ASYNC_PROTOCOLS", minion.extraProtocols))
-		minion.containerOptions.Add(WithEnv("KAFKA_BOOTSTRAP_SERVER", connection.bootstrapServers))
 		return nil
+	}
+}
+
+// WSMockEndpoint gets the exposed mock endpoints for a WebSocket Service.
+func (container *MicrocksAsyncMinionContainer) WSMockEndpoint(ctx context.Context, service, version, operationName string) (string, error) {
+	// Get the container host.
+	host, err := container.Host(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// Get the container mapped port.
+	natPort, err := container.MappedPort(ctx, DefaultHttpPort)
+	if err != nil {
+		return "", err
+	}
+	port := natPort.Port()
+
+	// Format service.
+	service = strings.ReplaceAll(service, " ", "+")
+
+	// Format version.
+	version = strings.ReplaceAll(version, " ", "+")
+
+	// Format operationName.
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+
+	return fmt.Sprintf(
+		"ws://%s:%s/api/ws/%s/%s/%s",
+		host,
+		port,
+		service,
+		version,
+		operationName,
+	), nil
+}
+
+// KafkaMockTopic gets the exposed mock topic for a Kafka Service.
+func (container *MicrocksAsyncMinionContainer) KafkaMockTopic(service, version, operationName string) string {
+	// Format operationName.
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+	operationName = strings.ReplaceAll(operationName, "/", "-")
+
+	// Format service.
+	r := strings.NewReplacer(" ", "", "-", "")
+	service = r.Replace(service)
+
+	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
+}
+
+func addProtocol(req *testcontainers.GenericContainerRequest, protocol string) {
+	if _, ok := req.Env["ASYNC_PROTOCOLS"]; !ok {
+		req.Env["ASYNC_PROTOCOLS"] = ""
+	}
+	if strings.Index(req.Env["ASYNC_PROTOCOLS"], ","+protocol) == -1 {
+		req.Env["ASYNC_PROTOCOLS"] += "," + protocol
 	}
 }

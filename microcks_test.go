@@ -61,7 +61,7 @@ func TestMockingFunctionality(t *testing.T) {
 		}
 	})
 
-	// Loading artifacts
+	// Loading artifacts.
 	status, err := microcksContainer.ImportAsMainArtifact(ctx, filepath.Join("testdata", "apipastries-openapi.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
@@ -135,7 +135,7 @@ func TestContractTestingFunctionality(t *testing.T) {
 		}
 	})
 
-	// Loading artifacts
+	// Loading artifacts.
 	status, err := microcksContainer.ImportAsMainArtifact(ctx, filepath.Join("testdata", "apipastries-openapi.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
