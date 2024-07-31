@@ -6,6 +6,7 @@ Go library for Testcontainers that enables embedding Microcks into your Go unit 
 [![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
 ![Go version](https://img.shields.io/github/go-mod/go-version/microcks/microcks-testcontainers-go?style=for-the-badge&logo=go)
 ![GitHub release](https://img.shields.io/github/downloads-pre/microcks/microcks-testcontainers-go/latest/total?style=for-the-badge)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go?ref=badge_shield)
 
 ## Build Status
 
@@ -221,3 +222,6 @@ kafkaTopic := ensembleContainers.
 	GetAsyncMinionContainer().
 	KafkaMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders")
 ```
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go?ref=badge_large)
