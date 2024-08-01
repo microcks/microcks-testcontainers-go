@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.32.0
-	github.com/testcontainers/testcontainers-go/modules/kafka v0.31.0
+	github.com/testcontainers/testcontainers-go/modules/kafka v0.32.0
 	microcks.io/go-client v0.1.0
 )
 
