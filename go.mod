@@ -1,13 +1,13 @@
 module microcks.io/testcontainers-go
 
-go 1.21.3
+go 1.22.0
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.4.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/stretchr/testify v1.9.0
-	github.com/testcontainers/testcontainers-go v0.32.0
-	github.com/testcontainers/testcontainers-go/modules/kafka v0.31.0
+	github.com/testcontainers/testcontainers-go v0.33.1-0.20240903122610-cf51ec77b031
+	github.com/testcontainers/testcontainers-go/modules/kafka v0.33.0
 	microcks.io/go-client v0.1.0
 )
 
@@ -26,7 +26,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deepmap/oapi-codegen v1.16.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v27.1.0+incompatible // indirect
+	github.com/docker/docker v27.1.1+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -69,8 +69,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
