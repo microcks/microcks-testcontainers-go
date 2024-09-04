@@ -1,10 +1,32 @@
-name: CI
+name: build-verify
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - '.github/**'
+      - '.gitignore'
+      - 'ADOPTERS*'
+      - 'LICENSE'
+      - 'README*'
+      - 'CHANGELOG*'
+      - 'ROADMAP*'
+      - 'SECURITY*'
+      - 'GOVERNANCE*'
+      - 'CODE_OF_CONDUCT*'
   pull_request:
     branches: [ "main" ]
-
+    paths-ignore:
+      - '.github/**'
+      - '.gitignore'
+      - 'ADOPTERS*'
+      - 'LICENSE'
+      - 'README*'
+      - 'CHANGELOG*'
+      - 'ROADMAP*'
+      - 'SECURITY*'
+      - 'GOVERNANCE*'
+      - 'CODE_OF_CONDUCT*'
+permissions: read-all
 jobs:
   build:
     runs-on: ubuntu-latest

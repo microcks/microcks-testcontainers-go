@@ -2,6 +2,7 @@
 
 Go library for Testcontainers that enables embedding Microcks into your Go unit tests with lightweight, throwaway instance thanks to containers
 
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/microcks/microcks-testcontainers-go/build-verify.yml?logo=github&style=for-the-badge)]
 [![License](https://img.shields.io/github/license/microcks/microcks-testcontainers-java?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
 ![Go version](https://img.shields.io/github/go-mod/go-version/microcks/microcks-testcontainers-go?style=for-the-badge&logo=go)
@@ -13,6 +14,12 @@ Latest released version is `v0.1.0`.
 
 Current development version is `v0.2.0`.
 
+#### Fossa license and security scans
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go?ref=badge_shield&issueType=license)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go.svg?type=shield&issueType=security)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go?ref=badge_shield&issueType=security)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go?ref=badge_small)
+
 ## How to use it?
 
 ### Include it into your project dependencies
@@ -23,7 +30,7 @@ To get the latest version, use go1.21+ and fetch using the `go get` command. For
 go get microcks.io/testcontainers-go@latest
 ```
 
-To get a specific version, use go1.21+ and fetch the desired version using the `go get` command. For example:
+To get a specific version, use go1.22+ and fetch the desired version using the `go get` command. For example:
 
 ```
 go get microcks.io/testcontainers-go@v0.1.0
