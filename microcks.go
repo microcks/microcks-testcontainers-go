@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	defaultImage = "quay.io/microcks/microcks-uber:latest"
+	DefaultImage = "quay.io/microcks/microcks-uber:latest"
 
 	// DefaultHttpPort represents the default Microcks HTTP port.
 	DefaultHttpPort = "8080/tcp"
@@ -50,10 +50,16 @@ type MicrocksContainer struct {
 	testcontainers.Container
 }
 
+// Deprecated: use Run instead
 // RunContainer creates an instance of the MicrocksContainer type.
 func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*MicrocksContainer, error) {
+	return Run(ctx, DefaultImage, opts...)
+}
+
+// Run creates an instance of the MicrocksContainer type.
+func Run(ctx context.Context, image string, opts ...testcontainers.ContainerCustomizer) (*MicrocksContainer, error) {
 	req := testcontainers.ContainerRequest{
-		Image:        defaultImage,
+		Image:        image,
 		ExposedPorts: []string{DefaultHttpPort, DefaultGrpcPort},
 		WaitingFor:   wait.ForLog("Started MicrocksApplication"),
 	}

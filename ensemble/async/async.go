@@ -55,11 +55,17 @@ type MicrocksAsyncMinionContainer struct {
 	containerOptions ContainerOptions
 }
 
+// Deprecated: use Run instead
 // RunContainer creates an instance of the MicrocksAsyncMinionContainer type.
 func RunContainer(ctx context.Context, microcksHostPort string, opts ...testcontainers.ContainerCustomizer) (*MicrocksAsyncMinionContainer, error) {
+	return Run(ctx, DefaultImage, microcksHostPort, opts...)
+}
+
+// Run creates an instance of the MicrocksAsyncMinionContainer type.
+func Run(ctx context.Context, image string, microcksHostPort string, opts ...testcontainers.ContainerCustomizer) (*MicrocksAsyncMinionContainer, error) {
 	req := testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        DefaultImage,
+			Image:        image,
 			ExposedPorts: []string{DefaultHttpPort},
 			WaitingFor:   wait.ForLog("Profile prod activated"),
 			Env: map[string]string{

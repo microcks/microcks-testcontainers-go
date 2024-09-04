@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	defaultImage = "quay.io/microcks/microcks-postman-runtime:latest"
+	DefaultImage = "quay.io/microcks/microcks-postman-runtime:latest"
 
 	// DefaultHTTPPort represents the default Postman HTTP port.
 	DefaultHTTPPort = "3000/tcp"
@@ -37,11 +37,17 @@ type PostmanContainer struct {
 	testcontainers.Container
 }
 
-// RunContainer runs the Postman container.
+// Deprecated: use Run instead
+// RunContainer creates an instance of the PostmanContainer type.
 func RunContainer(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (*PostmanContainer, error) {
+	return Run(ctx, DefaultImage, opts...)
+}
+
+// Run creates an instance of the PostmanContainer type.
+func Run(ctx context.Context, image string, opts ...testcontainers.ContainerCustomizer) (*PostmanContainer, error) {
 	req := testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        defaultImage,
+			Image:        image,
 			ExposedPorts: []string{DefaultHTTPPort},
 			WaitingFor:   wait.ForLog("Microcks postman-runtime wrapper listening on port: 3000"),
 		},

@@ -53,7 +53,7 @@ func TestMockingFunctionalityAtStartup(t *testing.T) {
 func TestMockingFunctionality(t *testing.T) {
 	ctx := context.Background()
 
-	microcksContainer, err := microcks.RunContainer(ctx, testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"))
+	microcksContainer, err := microcks.Run(ctx, "quay.io/microcks/microcks-uber:nightly")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		if err := microcksContainer.Terminate(ctx); err != nil {

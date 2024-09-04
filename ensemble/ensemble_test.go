@@ -158,8 +158,8 @@ func TestAsyncKafkaMockingFunctionality(t *testing.T) {
 	}
 
 	// Kafka container.
-	kc, err := kafkaTC.RunContainer(ctx,
-		testcontainers.WithImage("confluentinc/confluent-local:7.5.0"),
+	kc, err := kafkaTC.Run(ctx,
+		"confluentinc/confluent-local:7.5.0",
 		network.WithNetwork([]string{"kafka"}, net),
 	)
 	if err != nil {

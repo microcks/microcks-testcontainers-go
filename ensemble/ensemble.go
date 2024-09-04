@@ -50,14 +50,17 @@ type MicrocksContainersEnsemble struct {
 	hostAccessPorts []int
 
 	microcksContainer        *microcks.MicrocksContainer
+	microcksContainerImage   string
 	microcksContainerOptions ContainerOptions
 
 	postmanEnabled          bool
 	postmanContainer        *postman.PostmanContainer
+	postmanContainerImage   string
 	postmanContainerOptions ContainerOptions
 
 	asyncEnabled                bool
 	asyncMinionContainer        *async.MicrocksAsyncMinionContainer
+	asyncMinionContainerImage   string
 	asyncMinionContainerOptions ContainerOptions
 }
 
@@ -136,14 +139,17 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 			microcks.WithHostAccessPorts(ensemble.hostAccessPorts),
 		)
 	}
-	ensemble.microcksContainer, err = microcks.RunContainer(ctx, ensemble.microcksContainerOptions.list...)
+	if ensemble.microcksContainerImage == "" {
+		ensemble.microcksContainerImage = microcks.DefaultImage
+	}
+	ensemble.microcksContainer, err = microcks.Run(ctx, ensemble.microcksContainerImage, ensemble.microcksContainerOptions.list...)
 	if err != nil {
 		return nil, err
 	}
 
 	// Start Postman container if enabled.
 	if ensemble.postmanEnabled {
-		ensemble.postmanContainer, err = postman.RunContainer(ctx, ensemble.postmanContainerOptions.list...)
+		ensemble.postmanContainer, err = postman.Run(ctx, ensemble.postmanContainerImage, ensemble.postmanContainerOptions.list...)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +158,7 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	// Start Microcks async minion container if enabled.
 	if ensemble.asyncEnabled {
 		microcksHostPort := strings.Join([]string{microcks.DefaultNetworkAlias, ":8080"}, "")
-		ensemble.asyncMinionContainer, err = async.RunContainer(ctx, microcksHostPort, ensemble.asyncMinionContainerOptions.list...)
+		ensemble.asyncMinionContainer, err = async.Run(ctx, ensemble.asyncMinionContainerImage, microcksHostPort, ensemble.asyncMinionContainerOptions.list...)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +170,8 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 // WithMicrocksImage helps to use specific Microcks image.
 func WithMicrocksImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.microcksContainerOptions.Add(testcontainers.WithImage(image))
+		//e.microcksContainerOptions.Add(testcontainers.WithImage(image))
+		e.microcksContainerImage = image
 		return nil
 	}
 }
@@ -172,6 +179,7 @@ func WithMicrocksImage(image string) Option {
 // WithAsynncFature enables the Async Feature container with default container image (deduced from Microcks main one).
 func WithAsyncFeature() Option {
 	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerImage = async.DefaultImage
 		e.asyncEnabled = true
 		return nil
 	}
@@ -180,7 +188,8 @@ func WithAsyncFeature() Option {
 // WithAsyncFeatureImage enabled the Async Feature container with specific image.
 func WithAsyncFeatureImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.asyncMinionContainerOptions.Add(testcontainers.WithImage(image))
+		//e.asyncMinionContainerOptions.Add(testcontainers.WithImage(image))
+		e.asyncMinionContainerImage = image
 		e.asyncEnabled = true
 		return nil
 	}
@@ -189,6 +198,7 @@ func WithAsyncFeatureImage(image string) Option {
 // WithPostman allows to enable Postman container.
 func WithPostman(enable bool) Option {
 	return func(e *MicrocksContainersEnsemble) error {
+		e.postmanContainerImage = postman.DefaultImage
 		e.postmanEnabled = enable
 		return nil
 	}
@@ -197,7 +207,8 @@ func WithPostman(enable bool) Option {
 // WithPostmanImage helps to use specific Postman image.
 func WithPostmanImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.postmanContainerOptions.Add(testcontainers.WithImage(image))
+		//e.postmanContainerOptions.Add(testcontainers.WithImage(image))
+		e.postmanContainerImage = image
 		e.postmanEnabled = true
 		return nil
 	}
