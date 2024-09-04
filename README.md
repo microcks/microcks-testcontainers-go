@@ -60,8 +60,8 @@ import (
     microcks "microcks.io/testcontainers-go"
 )
 
-microcksContainer, err := microcks.RunContainer(ctx, 
-    testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+microcksContainer, err := microcks.Run(ctx, 
+    "quay.io/microcks/microcks-uber:nightly",
     microcks.WithMainArtifact("testdata/apipastries-openapi.yaml"),
     microcks.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
 )
