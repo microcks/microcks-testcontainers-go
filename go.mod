@@ -8,7 +8,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.33.1-0.20240903122610-cf51ec77b031
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.33.0
-	microcks.io/go-client v0.1.1-0.20240906210226-4cc6754498ae
+	microcks.io/go-client v0.2.0
 )
 
 require (
