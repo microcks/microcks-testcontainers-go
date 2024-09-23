@@ -228,3 +228,26 @@ kafkaTopic := ensembleContainers.
 	GetAsyncMinionContainer().
 	KafkaMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders")
 ```
+
+##### Launching new contract-tests
+
+Using contract-testing techniques on Asynchronous endpoints may require a different style of interacting with the Microcks container. For example, you may need to:
+* Start the test making Microcks listen to the target async endpoint,
+* Activate your System Under Tests so that it produces an event,
+* Finalize the Microcks tests and actually ensure you received one or many well-formed events.
+
+For that the `MicrocksContainer` now provides a `TestEndpointAsync(ctx context.Context, testRequest *client.TestRequest, testResult chan *client.TestResult)` method that actually uses a channel. Once invoked, you may trigger your application events and then wait to receive the future result to assert like this:
+
+```go
+// Start the test, making Microcks listen the endpoint provided in testRequest
+testResultChan := make(chan *client.TestResult)
+go ensembleContainers.GetMicrocksContainer().TestEndpointAsync(ctx, &testRequest, testResultChan)
+
+// Here below: activate your app to make it produce events on this endpoint.
+// myapp.invokeBusinessMethodThatTriggerEvents();
+
+// Now retrieve the final test result and assert.
+testResult := <-testResultChan
+require.NoError(t, err)
+require.True(t, testResult.Success)
+```

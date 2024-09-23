@@ -263,13 +263,15 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 		// Wait an initial delay to avoid inefficient poll.
 		time.Sleep(100 * time.Millisecond)
 
-		// Compute future time that is the end of waiting time frame.
-		future := nowInMilliseconds() + int64(testRequest.Timeout)
+		// Compute future time that is the end of waiting time frame + extra 1000 to avoid race condition.
+		future := nowInMilliseconds() + int64(testRequest.Timeout) + 1000
 		for nowInMilliseconds() < future {
 			testResultResponse, err := c.GetTestResultWithResponse(ctx, testResultId)
 			if err != nil {
 				return nil, fmt.Errorf("error getting test result with response: %w", err)
 			}
+
+			//fmt.Println(string(testResultResponse.Body[:]))
 
 			// If still in progress, then wait again.
 			if testResultResponse.JSON200.InProgress {
@@ -284,6 +286,18 @@ func (container *MicrocksContainer) TestEndpoint(ctx context.Context, testReques
 		return response.JSON200, err
 	}
 	return nil, fmt.Errorf("couldn't launch on new test on Microcks. Please check Microcks container logs")
+}
+
+// TestEndpointAsync launches a conformance test on an endpoint and will provide result via a channel.
+func (container *MicrocksContainer) TestEndpointAsync(ctx context.Context, testRequest *client.TestRequest, testResult chan *client.TestResult) error {
+	result, err := container.TestEndpoint(ctx, testRequest)
+	if err != nil {
+		return fmt.Errorf("error executing TestEndpoint: %w", err)
+	}
+
+	testResult <- result // result to channel testResult.
+
+	return nil
 }
 
 func importArtifactHook(artifactFilePath string, mainArtifact bool) testcontainers.ContainerHook {
