@@ -45,7 +45,7 @@ func TestPostmanContractTestingFunctionality(t *testing.T) {
 		ctx,
 		ensemble.WithMainArtifact("../testdata/apipastries-openapi.yaml"),
 		ensemble.WithSecondaryArtifact("../testdata/apipastries-postman-collection.json"),
-		ensemble.WithPostman(true),
+		ensemble.WithPostman(),
 	)
 	require.NoError(t, err)
 	networkName := ec.GetNetwork().Name

@@ -196,10 +196,10 @@ func WithAsyncFeatureImage(image string) Option {
 }
 
 // WithPostman allows to enable Postman container.
-func WithPostman(enable bool) Option {
+func WithPostman() Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.postmanContainerImage = postman.DefaultImage
-		e.postmanEnabled = enable
+		e.postmanEnabled = true
 		return nil
 	}
 }
