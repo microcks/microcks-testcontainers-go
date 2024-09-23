@@ -1,0 +1,56 @@
+header:
+  schema-version: 1.0.0
+  last-updated: '2024-09-23'
+  last-reviewed: '2024-09-23'
+  expiration-date: '2025-09-23T01:00:00.000Z'
+  project-url: https://github.com/microcks/microcks
+  project-release: '0.2.0'
+  changelog: https://github.com/microcks/microcks-testcontainers-go/blob/main/CHANGELOG.md
+  license: https://github.com/microcks/microcks-testcontainers-go/blob/main/LICENSE
+project-lifecycle:
+  stage: active
+  roadmap: https://github.com/microcks/microcks-testcontainers-go/blob/main/ROADMAP.md
+  bug-fixes-only: false
+  core-maintainers:
+    - github:lbroudoux
+    - github:yada
+contribution-policy:
+  accepts-pull-requests: true
+  accepts-automated-pull-requests: true
+  code-of-conduct: https://github.com/microcks/.github/blob/master/CODE_OF_CONDUCT.md
+  contributing-policy: https://github.com/microcks/.github/blob/master/CONTRIBUTING.md
+documentation:
+  - https://microcks.io
+distribution-points:
+  - https://microcks.io
+  - https://github.com/microcks/microcks
+  - https://quay.io/microcks
+security-artifacts:
+  threat-model:
+    threat-model-created: false
+security-testing:
+  - tool-type: sca
+    tool-name: Dependabot
+    tool-version: latest
+    integration:
+      ad-hoc: true
+      ci: false
+      before-release: false
+    comment: |
+      Dependabot is enabled for this repo on a weekly scheduled basis.
+security-contacts:
+  - type: email
+    value: security@microcks.io
+vulnerability-reporting:
+  accepts-vulnerability-reports: true
+  security-policy: https://github.com/microcks/microcks-testcontainers-go/security/policy
+  email-contact: security@microcks.io
+  comment: |
+    To report a security issue for one of the libraries owned by the Microcks community, write an email with a detailed description of the issue to security@microcks.io.
+dependencies:
+  third-party-packages: true
+  dependencies-lists:
+    - https://github.com/microcks/microcks-testcontainers-go/network/dependencies
+    - https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-go/refs/branch/main/4f111db4ff13beaeae87237bad791f43f31b8745/browse/dependencies
+  env-dependencies-policy:
+    policy-url: https://github.com/microcks/microcks-testcontainers-go/network/dependencies/blob/main/DEPENDENCY_POLICY.md
