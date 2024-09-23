@@ -8,7 +8,7 @@ header:
   changelog: https://github.com/microcks/microcks-testcontainers-go/blob/main/CHANGELOG.md
   license: https://github.com/microcks/microcks-testcontainers-go/blob/main/LICENSE
 project-lifecycle:
-  stage: active
+  status: active
   roadmap: https://github.com/microcks/microcks-testcontainers-go/blob/main/ROADMAP.md
   bug-fixes-only: false
   core-maintainers:
