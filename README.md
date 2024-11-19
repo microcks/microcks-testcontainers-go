@@ -12,9 +12,9 @@ Go library for Testcontainers that enables embedding Microcks into your Go unit 
 
 ## Build Status
 
-Latest released version is `v0.1.0`.
+Latest released version is `v0.2.0`.
 
-Current development version is `v0.2.0`.
+Current development version is `v0.2.1`.
 
 #### Fossa license and security scans
 
@@ -48,7 +48,7 @@ go get microcks.io/testcontainers-go@latest
 To get a specific version, use go1.22+ and fetch the desired version using the `go get` command. For example:
 
 ```
-go get microcks.io/testcontainers-go@v0.1.0
+go get microcks.io/testcontainers-go@v0.2.0
 ```
 
 ### Startup the container
