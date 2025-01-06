@@ -22,6 +22,7 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"microcks.io/testcontainers-go/ensemble/async/connection/amazonservice"
 	"microcks.io/testcontainers-go/ensemble/async/connection/generic"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 )
@@ -167,6 +168,42 @@ func WithAMQPConnection(connection generic.Connection) testcontainers.CustomizeR
 	}
 }
 
+// WithAmazonSQSConnection connects the MicrocksAsyncMinionContainer to an Amazon SQS service to allow SQS messages mocking.
+func WithAmazonSQSConnection(connection amazonservice.Connection) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env["AWS_SQS_REGION"] = connection.Region
+		req.Env["AWS_ACCESS_KEY_ID"] = connection.AccessKey
+		req.Env["AWS_SECRET_ACCESS_KEY"] = connection.SecretKey
+		if len(connection.EndpointOverride) > 0 {
+			req.Env["AWS_SQS_ENDPOINT"] = connection.EndpointOverride
+		}
+		addProtocol(req, "SQS")
+
+		return nil
+	}
+}
+
+// WithAmazonSNSConnection connects the MicrocksAsyncMinionContainer to an Amazon SNS service to allow SQS messages mocking.
+func WithAmazonSNSConnection(connection amazonservice.Connection) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env["AWS_SNS_REGION"] = connection.Region
+		req.Env["AWS_ACCESS_KEY_ID"] = connection.AccessKey
+		req.Env["AWS_SECRET_ACCESS_KEY"] = connection.SecretKey
+		if len(connection.EndpointOverride) > 0 {
+			req.Env["AWS_SNS_ENDPOINT"] = connection.EndpointOverride
+		}
+		addProtocol(req, "SNS")
+
+		return nil
+	}
+}
+
 // WSMockEndpoint gets the exposed mock endpoints for a WebSocket Service.
 func (container *MicrocksAsyncMinionContainer) WSMockEndpoint(ctx context.Context, service, version, operationName string) (string, error) {
 	// Get the container host.
@@ -246,6 +283,31 @@ func (container *MicrocksAsyncMinionContainer) AMQPMockDestination(service, vers
 	fullR := strings.NewReplacer(" ", "", "-", "")
 	service = fullR.Replace(service)
 	version = simpleR.Replace(version)
+
+	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
+}
+
+// AmazonSQSMockQueue gets the exposed mock topic for an Amazon SQS Service.
+func (container *MicrocksAsyncMinionContainer) AmazonSQSMockQueue(service, version, operationName string) string {
+	return amazonServiceMockDestination(service, version, operationName)
+}
+
+// AmazonSNSMockTopic gets the exposed mock topic for an Amazon SNS Service.
+func (container *MicrocksAsyncMinionContainer) AmazonSNSMockTopic(service, version, operationName string) string {
+	return amazonServiceMockDestination(service, version, operationName)
+}
+
+func amazonServiceMockDestination(service, version, operationName string) string {
+	// Format operationName.
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+	operationName = strings.ReplaceAll(operationName, "/", "-")
+
+	// Format service and version.
+	r := strings.NewReplacer(" ", "", "-", "")
+	service = r.Replace(service)
+	version = strings.ReplaceAll(version, ".", "")
 
 	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
 }

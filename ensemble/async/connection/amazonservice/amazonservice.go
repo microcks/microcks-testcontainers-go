@@ -24,7 +24,7 @@ type Connection struct {
 	EndpointOverride string
 
 	// AccessKey represents an access key.
-	accessKey string
+	AccessKey string
 
 	// SccessKey represents a secret key.
 	SecretKey string

@@ -24,6 +24,7 @@ import (
 	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/async"
+	"microcks.io/testcontainers-go/ensemble/async/connection/amazonservice"
 	"microcks.io/testcontainers-go/ensemble/async/connection/generic"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 	"microcks.io/testcontainers-go/ensemble/postman"
@@ -293,10 +294,18 @@ func WithMQTTConnection(connection generic.Connection) Option {
 	}
 }
 
-// WithAMQPConnection configures a connection to an AMQP/RabbitMQ Broker.
-func WithAMQPConnection(connection generic.Connection) Option {
+// WithAmazonSQSConnection configures a connection to an Amazon SQS service.
+func WithAmazonSQSConnection(connection amazonservice.Connection) Option {
 	return func(e *MicrocksContainersEnsemble) error {
-		e.asyncMinionContainerOptions.Add(async.WithAMQPConnection(connection))
+		e.asyncMinionContainerOptions.Add(async.WithAmazonSQSConnection(connection))
+		return nil
+	}
+}
+
+// WithAmazonSNSConnection configures a connection to an Amazon SNS service.
+func WithAmazonSNSConnection(connection amazonservice.Connection) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(async.WithAmazonSNSConnection(connection))
 		return nil
 	}
 }
