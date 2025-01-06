@@ -30,15 +30,11 @@ jobs:
         with:
           go-version-file: ./go.mod
           cache-dependency-path: ./go.sum
-
-      - name: Set release version
-        run: |
-
-      - name: Commit, push and tag changes
+          
+      - name: Place a Git tag and push it
         run: |
           git config user.name "microcks-bot"
           git config user.email "info@microcks.io"
-          git commit -m "Releasing version ${{ github.event.inputs.version }}" .
           git tag ${{ github.event.inputs.version }}
           git push origin ${{ github.event.inputs.version }}
 
