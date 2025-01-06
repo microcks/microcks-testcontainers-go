@@ -48,7 +48,7 @@ go get microcks.io/testcontainers-go@latest
 To get a specific version, use go1.22+ and fetch the desired version using the `go get` command. For example:
 
 ```
-go get microcks.io/testcontainers-go@v0.2.0
+go get microcks.io/testcontainers-go@v0.2.1
 ```
 
 ### Startup the container
