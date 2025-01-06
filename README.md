@@ -12,9 +12,9 @@ Go library for Testcontainers that enables embedding Microcks into your Go unit 
 
 ## Build Status
 
-Latest released version is `v0.2.0`.
+Latest released version is `v0.2.1`.
 
-Current development version is `v0.2.1`.
+Current development version is `v0.3.0`.
 
 #### Fossa license and security scans
 
