@@ -137,7 +137,7 @@ func WithKafkaConnection(connection kafka.Connection) testcontainers.CustomizeRe
 	}
 }
 
-// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a MQTT broker to allow MQTT messages mocking.
+// WithMQTTConnection connects the MicrocksAsyncMinionContainer to a MQTT broker to allow MQTT messages mocking.
 func WithMQTTConnection(connection generic.Connection) testcontainers.CustomizeRequestOption {
 	return func(req *testcontainers.GenericContainerRequest) error {
 		if req.Env == nil {
@@ -147,6 +147,21 @@ func WithMQTTConnection(connection generic.Connection) testcontainers.CustomizeR
 		req.Env["MQTT_USERNAME"] = connection.Username
 		req.Env["MQTT_PASSWORD"] = connection.Password
 		addProtocol(req, "MQTT")
+
+		return nil
+	}
+}
+
+// WithAMQPConnection connects the MicrocksAsyncMinionContainer to an AMQP/RabbitMQ broker to allow MQTT messages mocking.
+func WithAMQPConnection(connection generic.Connection) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env["AMQP_SERVER"] = connection.Server
+		req.Env["AMQP_USERNAME"] = connection.Username
+		req.Env["AMQP_PASSWORD"] = connection.Password
+		addProtocol(req, "AMQP")
 
 		return nil
 	}
