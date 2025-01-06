@@ -218,6 +218,22 @@ func (container *MicrocksAsyncMinionContainer) KafkaMockTopic(service, version, 
 	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
 }
 
+// MQTTMockTopic gets the exposed mock topic for a MQTT Service.
+func (container *MicrocksAsyncMinionContainer) MQTTMockTopic(service, version, operationName string) string {
+	// Format operationName.
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+
+	// Format service and version.
+	simpleR := strings.NewReplacer(" ", "")
+	fullR := strings.NewReplacer(" ", "", "-", "")
+	service = fullR.Replace(service)
+	version = simpleR.Replace(version)
+
+	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
+}
+
 func addProtocol(req *testcontainers.GenericContainerRequest, protocol string) {
 	if _, ok := req.Env["ASYNC_PROTOCOLS"]; !ok {
 		req.Env["ASYNC_PROTOCOLS"] = ""
