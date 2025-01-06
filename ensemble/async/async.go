@@ -22,6 +22,7 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"microcks.io/testcontainers-go/ensemble/async/connection/generic"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 )
 
@@ -131,6 +132,21 @@ func WithKafkaConnection(connection kafka.Connection) testcontainers.CustomizeRe
 		}
 		req.Env["KAFKA_BOOTSTRAP_SERVER"] = connection.BootstrapServers
 		addProtocol(req, "KAFKA")
+
+		return nil
+	}
+}
+
+// WithKafkaConnection connects the MicrocksAsyncMinionContainer to a MQTT broker to allow MQTT messages mocking.
+func WithMQTTConnection(connection generic.Connection) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env["MQTT_SERVER"] = connection.Server
+		req.Env["MQTT_USERNAME"] = connection.Username
+		req.Env["MQTT_PASSWORD"] = connection.Password
+		addProtocol(req, "MQTT")
 
 		return nil
 	}

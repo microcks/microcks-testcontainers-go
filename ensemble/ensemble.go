@@ -24,6 +24,7 @@ import (
 	"microcks.io/go-client"
 	microcks "microcks.io/testcontainers-go"
 	"microcks.io/testcontainers-go/ensemble/async"
+	"microcks.io/testcontainers-go/ensemble/async/connection/generic"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 	"microcks.io/testcontainers-go/ensemble/postman"
 )
@@ -280,6 +281,14 @@ func WithHostAccessPorts(hostAccessPorts []int) Option {
 func WithKafkaConnection(connection kafka.Connection) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.asyncMinionContainerOptions.Add(async.WithKafkaConnection(connection))
+		return nil
+	}
+}
+
+// WithMQTTConnection configures a connection to a MQTT Broker.
+func WithMQTTConnection(connection generic.Connection) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(async.WithMQTTConnection(connection))
 		return nil
 	}
 }
