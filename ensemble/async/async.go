@@ -234,6 +234,22 @@ func (container *MicrocksAsyncMinionContainer) MQTTMockTopic(service, version, o
 	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
 }
 
+// AMQPMockDestination gets the exposed mock topic for a AMQP/RabbitMQ Service.
+func (container *MicrocksAsyncMinionContainer) AMQPMockDestination(service, version, operationName string) string {
+	// Format operationName.
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+
+	// Format service and version.
+	simpleR := strings.NewReplacer(" ", "")
+	fullR := strings.NewReplacer(" ", "", "-", "")
+	service = fullR.Replace(service)
+	version = simpleR.Replace(version)
+
+	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
+}
+
 func addProtocol(req *testcontainers.GenericContainerRequest, protocol string) {
 	if _, ok := req.Env["ASYNC_PROTOCOLS"]; !ok {
 		req.Env["ASYNC_PROTOCOLS"] = ""
