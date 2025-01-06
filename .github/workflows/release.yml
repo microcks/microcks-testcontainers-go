@@ -30,7 +30,7 @@ jobs:
         with:
           go-version-file: ./go.mod
           cache-dependency-path: ./go.sum
-          
+
       - name: Place a Git tag and push it
         run: |
           git config user.name "microcks-bot"
@@ -58,13 +58,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import-gpg.outputs.fingerprint }}
-
-      # Persist logs
-      - name: GoReleaser release output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: goreleaser-release
-          path: |
-            target/jreleaser/trace.log
-            target/jreleaser/output.properties
