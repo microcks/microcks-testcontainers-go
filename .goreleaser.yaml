@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+builds:
+  - skip: true
+
+source:
+  enabled: true
+
+signs:
+  - artifacts: checksum
+    cmd: gpg2
+    args:
+      - "--batch"
+      - "-u"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+
+sboms:
+  - artifacts: source
+    documents:
+      - "microcks-testcontainers-go-{{ .Version }}.spdx-sbom.json"
