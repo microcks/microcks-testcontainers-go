@@ -141,6 +141,9 @@ require.Equal(t, "http://bad-impl:3001", testResult.TestedEndpoint)
 
 The `testResult` gives you access to all details regarding success of failure on different test cases.
 
+In addition, you can use the `MessagesForTestCase()` function to retrieve the messages exchanged during the test.
+
+
 ### Advanced features with MicrocksContainersEnsemble
 
 The `MicrocksContainer` referenced above supports essential features of Microcks provided by the main Microcks container.
@@ -266,3 +269,5 @@ testResult := <-testResultChan
 require.NoError(t, err)
 require.True(t, testResult.Success)
 ```
+
+In addition, you can use the `EventMessagesForTestCase()` function to retrieve the messages exchanged during the test.

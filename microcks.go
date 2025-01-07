@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -300,6 +301,50 @@ func (container *MicrocksContainer) TestEndpointAsync(ctx context.Context, testR
 	return nil
 }
 
+// MessagesForTestCase retrieves messages exchanged during a test on an endpoint.
+func (container *MicrocksContainer) MessagesForTestCase(ctx context.Context, testResult *client.TestResult, operationName string) (*[]client.RequestResponsePair, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client.
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return nil, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Build the test case identifier.
+	operation := encodeOperationName(operationName)
+	testCaseId := fmt.Sprintf("%s-%s-%s", testResult.Id, strconv.Itoa(int(testResult.TestNumber)), operation)
+
+	response, err := c.GetMessagesByTestCaseWithResponse(ctx, testResult.Id, testCaseId)
+	return response.JSON200, err
+}
+
+// EventMessagesForTestCase retrieves event messages received during a test on an endpoint.
+func (container *MicrocksContainer) EventMessagesForTestCase(ctx context.Context, testResult *client.TestResult, operationName string) (*[]client.UnidirectionalEvent, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client.
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return nil, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Build the test case identifier.
+	operation := encodeOperationName(operationName)
+	testCaseId := fmt.Sprintf("%s-%s-%s", testResult.Id, strconv.Itoa(int(testResult.TestNumber)), operation)
+
+	response, err := c.GetEventsByTestCaseWithResponse(ctx, testResult.Id, testCaseId)
+	return response.JSON200, err
+}
+
 func importArtifactHook(artifactFilePath string, mainArtifact bool) testcontainers.ContainerHook {
 	return func(ctx context.Context, container testcontainers.Container) error {
 		microcksContainer := &MicrocksContainer{Container: container}
@@ -386,4 +431,10 @@ func (container *MicrocksContainer) createSecret(ctx context.Context, s client.S
 
 func nowInMilliseconds() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func encodeOperationName(operationName string) string {
+	operationName = strings.ReplaceAll(operationName, "/", "!")
+	return operationName
+	//return url.QueryEscape(operationName)
 }

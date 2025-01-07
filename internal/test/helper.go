@@ -244,6 +244,17 @@ func AssertBadImplementation(t *testing.T, ctx context.Context, microcksContaine
 
 	t0 := (*testResult.TestCaseResults)[0].TestStepResults
 	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
+
+	// Retrieve messages for the failing test case.
+	messages, err := microcksContainer.MessagesForTestCase(ctx, testResult, "GET /pastries")
+	require.NoError(t, err)
+	require.NotNil(t, messages)
+	require.Equal(t, 3, len(*messages))
+	for _, m := range *messages {
+		require.NotNil(t, m.Request)
+		require.NotNil(t, m.Response)
+		require.NotEmpty(t, *m.Response.Content)
+	}
 }
 
 // AssertGoodImplementation helps to assert the endpoint with a good implementation.
