@@ -315,7 +315,7 @@ func (container *MicrocksContainer) MessagesForTestCase(ctx context.Context, tes
 		return nil, fmt.Errorf("error creating Microcks client: %w", err)
 	}
 
-	// Build the test case identifier.
+	// Build the test case identifier and call api.
 	operation := encodeOperationName(operationName)
 	testCaseId := fmt.Sprintf("%s-%s-%s", testResult.Id, strconv.Itoa(int(testResult.TestNumber)), operation)
 
@@ -337,12 +337,58 @@ func (container *MicrocksContainer) EventMessagesForTestCase(ctx context.Context
 		return nil, fmt.Errorf("error creating Microcks client: %w", err)
 	}
 
-	// Build the test case identifier.
+	// Build the test case identifier and call api.
 	operation := encodeOperationName(operationName)
 	testCaseId := fmt.Sprintf("%s-%s-%s", testResult.Id, strconv.Itoa(int(testResult.TestNumber)), operation)
 
 	response, err := c.GetEventsByTestCaseWithResponse(ctx, testResult.Id, testCaseId)
 	return response.JSON200, err
+}
+
+// Verify checks that given Service has been invoked at least one time, for the current invocations' date.
+func (container *MicrocksContainer) Verify(ctx context.Context, serviceName string, serviceVersion string) (bool, error) {
+	return container.VerifyAtDate(ctx, serviceName, serviceVersion, time.Now())
+}
+
+// VerifyAtDate checks that given Service has been invoked at least one time, for the given invocations' date.
+func (container *MicrocksContainer) VerifyAtDate(ctx context.Context, serviceName string, serviceVersion string, date time.Time) (bool, error) {
+	invocationsCount, err := container.ServiceInvocationsCount(ctx, serviceName, serviceVersion)
+	if err != nil {
+		return false, fmt.Errorf("cannot retrieve invocations stats: %w", err)
+	}
+
+	return invocationsCount > 0, nil
+}
+
+// ServiceInvocationsCount gets the invocations' count for a given service, identified by its name and version, for the current date.
+func (container *MicrocksContainer) ServiceInvocationsCount(ctx context.Context, serviceName string, serviceVersion string) (int, error) {
+	// Retrieve API endpoint.
+	return container.ServiceInvocationsCountAtDate(ctx, serviceName, serviceVersion, time.Now())
+}
+
+// ServiceInvocationsCountAtDate gets the invocations' count for a given service, identified by its name and version, for the given invocations' date.
+func (container *MicrocksContainer) ServiceInvocationsCountAtDate(ctx context.Context, serviceName string, serviceVersion string, date time.Time) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client.
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return 0, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Build the day.
+	day := formatDay(date)
+
+	// To avoid race condition issue while Microcks server is processing metrics asynchronously.
+	time.Sleep(100 * time.Millisecond)
+	stats, err := c.GetInvocationStatsByServiceWithResponse(ctx, serviceName, serviceVersion, &client.GetInvocationStatsByServiceParams{
+		Day: &day,
+	})
+	return int(stats.JSON200.DailyCount), err
 }
 
 func importArtifactHook(artifactFilePath string, mainArtifact bool) testcontainers.ContainerHook {
@@ -434,7 +480,9 @@ func nowInMilliseconds() int64 {
 }
 
 func encodeOperationName(operationName string) string {
-	operationName = strings.ReplaceAll(operationName, "/", "!")
-	return operationName
-	//return url.QueryEscape(operationName)
+	return strings.ReplaceAll(operationName, "/", "!")
+}
+
+func formatDay(date time.Time) string {
+	return date.Format("20060102")
 }

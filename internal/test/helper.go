@@ -94,6 +94,15 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 
 	require.Equal(t, "Millefeuille", pastry["name"])
 
+	// Check it has been called once.
+	called, err := microcksContainer.Verify(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.True(t, called)
+
+	callCount, err := microcksContainer.ServiceInvocationsCount(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, 1, callCount)
+
 	// Check that mock from secondary artifact has been loaded.
 	resp, err = http.Get(baseApiUrl + "/pastries/Eclair Chocolat")
 	require.NoError(t, err)
@@ -107,6 +116,11 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	json.Unmarshal([]byte(body), &pastry)
 
 	require.Equal(t, "Eclair Chocolat", pastry["name"])
+
+	// Check it has been called a second time.
+	callCount, err = microcksContainer.ServiceInvocationsCount(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, 2, callCount)
 }
 
 // MicrocksAsyncMockingFunctionality tests the Microcks async mocking functionality.

@@ -2,6 +2,8 @@
 
 Go library for Testcontainers that enables embedding Microcks into your Go unit tests with lightweight, throwaway instance thanks to containers
 
+Want to see this extension in action? Check out our [sample application](https://github.com/microcks/microcks-testcontainers-go-demo). 🚀
+
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/microcks/microcks-testcontainers-go/build-verify.yml?logo=github&style=for-the-badge)
 [![License](https://img.shields.io/github/license/microcks/microcks-testcontainers-java?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
@@ -113,6 +115,26 @@ The container provides methods for different supported API styles/protocols (Soa
 
 The container also provides `HttpEndpoint()` for raw access to those API endpoints.
 
+### Verifying mock endpoint has been invoked
+
+Once the mock endpoint has been invoked, you'd probably need to ensure that the mock have been really invoked.
+
+You can do it like this :
+
+```go
+called, err := microcksContainer.Verify(ctx, "API Pastries", "0.0.1")
+require.NoError(t, err)
+require.True(t, called)
+```
+
+Or like this after 2 subsequent call to the same mock endpoint:
+
+```go
+callCount, err := microcksContainer.ServiceInvocationsCount(ctx, "API Pastries", "0.0.1")
+require.NoError(t, err)
+require.Equal(t, 2, callCount)
+```
+
 ### Launching new contract-tests
 
 If you want to ensure that your application under test is conformant to an OpenAPI contract (or many contracts),
@@ -143,6 +165,36 @@ The `testResult` gives you access to all details regarding success of failure on
 
 In addition, you can use the `MessagesForTestCase()` function to retrieve the messages exchanged during the test.
 
+A comprehensive Go demo application illustrating both usages is available here: [go-order-service](https://github.com/microcks/microcks-testcontainers-go-demo).
+
+### Using authentication Secrets
+
+It's a common need to authenticate to external systems like Http/Git repositories or external brokers. For that, the `microcks` package provides the `WithSecret()` method to register authentication secrets at startup:
+
+```go
+microcksContainer, err := microcks.Run(ctx, 
+    "quay.io/microcks/microcks-uber:nightly",
+    microcks.WithMainArtifact("testdata/apipastries-openapi.yaml"),
+    microcks.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+    microcks.WithSecret(client.Secret{
+        Name: "localstack secret",
+        Username: "test",
+        Password: "test",
+    }),
+)
+```
+
+You may reuse this secret using its name later on during a test like this:
+
+```ts
+testRequest := client.TestRequest{
+    ServiceId:    "Pastry orders API:0.1.0",
+    RunnerType:   client.TestRunnerTypeASYNCAPISCHEMA,
+    TestEndpoint: "sqs://us-east-1/pastry-orders?overrideUrl=http://localstack:4566",
+    SecretName:   "localstack secret",
+    Timeout:      2000,
+}
+```
 
 ### Advanced features with MicrocksContainersEnsemble
 
