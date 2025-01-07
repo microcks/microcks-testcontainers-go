@@ -10,7 +10,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.34.0
 	golang.org/x/mod v0.22.0
-	microcks.io/go-client v0.2.0
+	microcks.io/go-client v0.3.0
 )
 
 require (
