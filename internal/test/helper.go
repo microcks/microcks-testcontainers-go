@@ -81,6 +81,11 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	baseApiUrl, err := microcksContainer.RestMockEndpoint(ctx, "API Pastries", "0.0.1")
 	require.NoError(t, err)
 
+	// Check it has not yet been called once.
+	callCount, err := microcksContainer.ServiceInvocationsCount(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, 0, callCount)
+
 	resp, err := http.Get(baseApiUrl + "/pastries/Millefeuille")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -99,7 +104,7 @@ func MicrocksMockingFunctionality(t *testing.T, ctx context.Context, microcksCon
 	require.NoError(t, err)
 	require.True(t, called)
 
-	callCount, err := microcksContainer.ServiceInvocationsCount(ctx, "API Pastries", "0.0.1")
+	callCount, err = microcksContainer.ServiceInvocationsCount(ctx, "API Pastries", "0.0.1")
 	require.NoError(t, err)
 	require.Equal(t, 1, callCount)
 

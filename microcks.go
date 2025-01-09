@@ -384,11 +384,17 @@ func (container *MicrocksContainer) ServiceInvocationsCountAtDate(ctx context.Co
 	day := formatDay(date)
 
 	// To avoid race condition issue while Microcks server is processing metrics asynchronously.
-	time.Sleep(100 * time.Millisecond)
+	// The wait time is lower on other language bindings (100ms). Don't know why...
+	time.Sleep(250 * time.Millisecond)
 	stats, err := c.GetInvocationStatsByServiceWithResponse(ctx, serviceName, serviceVersion, &client.GetInvocationStatsByServiceParams{
 		Day: &day,
 	})
-	return int(stats.JSON200.DailyCount), err
+
+	invocationStats := stats.JSON200
+	if invocationStats != nil {
+		return int(stats.JSON200.DailyCount), err
+	}
+	return 0, err
 }
 
 func importArtifactHook(artifactFilePath string, mainArtifact bool) testcontainers.ContainerHook {
