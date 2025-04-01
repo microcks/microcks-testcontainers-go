@@ -262,7 +262,7 @@ func AssertBadImplementation(t *testing.T, ctx context.Context, microcksContaine
 	}
 
 	t0 := (*testResult.TestCaseResults)[0].TestStepResults
-	require.True(t, strings.Contains(*(*t0)[0].Message, "object has missing required properties"))
+	require.True(t, strings.Contains(*(*t0)[0].Message, "required property 'status' not found"))
 
 	// Retrieve messages for the failing test case.
 	messages, err := microcksContainer.MessagesForTestCase(ctx, testResult, "GET /pastries")
