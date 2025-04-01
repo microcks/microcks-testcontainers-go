@@ -193,7 +193,12 @@ func (container *MicrocksContainer) SoapMockEndpoint(ctx context.Context, servic
 	return fmt.Sprintf("%s/soap/%s/%s", endpoint, service, version), nil
 }
 
-// RestMockEndpoints get the exposed mock endpoint for a REST Service.
+// SoapMockEndpointPath get the exposed mock endpoint path for a SOAP Service.
+func (container *MicrocksContainer) SoapMockEndpointPath(ctx context.Context, service string, version string) string {
+	return fmt.Sprintf("/soap/%s/%s", service, version)
+}
+
+// RestMockEndpoint get the exposed mock endpoint for a REST Service.
 func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, service string, version string) (string, error) {
 	endpoint, err := container.HttpEndpoint(ctx)
 	if err != nil {
@@ -201,6 +206,11 @@ func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, servic
 	}
 
 	return fmt.Sprintf("%s/rest/%s/%s", endpoint, service, version), nil
+}
+
+// RestMockEndpointPath get the exposed mock endpoint path for a REST Service.
+func (container *MicrocksContainer) RestMockEndpointPath(ctx context.Context, service string, version string) string {
+	return fmt.Sprintf("/rest/%s/%s", service, version)
 }
 
 // GraphQLMockEndpoint get the exposed mock endpoints for a GraphQL Service.
@@ -211,6 +221,11 @@ func (container *MicrocksContainer) GraphQLMockEndpoint(ctx context.Context, ser
 	}
 
 	return fmt.Sprintf("%s/graphql/%s/%s", endpoint, service, version), nil
+}
+
+// GraphQLMockEndpointPath get the exposed mock endpoints path for a GraphQL Service.
+func (container *MicrocksContainer) GraphQLMockEndpointPath(ctx context.Context, service string, version string) string {
+	return fmt.Sprintf("/graphql/%s/%s", service, version)
 }
 
 // GrpcMockEndpoint get the exposed mock endpoint for a GRPC Service.
