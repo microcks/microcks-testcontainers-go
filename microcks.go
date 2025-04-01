@@ -198,6 +198,21 @@ func (container *MicrocksContainer) SoapMockEndpointPath(ctx context.Context, se
 	return fmt.Sprintf("/soap/%s/%s", service, version)
 }
 
+// ValidatingSoapMockEndpoint get the exposed mock endpoint - with request validation enabled - for a SOAP Service.
+func (container *MicrocksContainer) ValidatingSoapMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/soap/%s/%s?validate=true", endpoint, service, version), nil
+}
+
+// ValidatingSoapMockEndpointPath get the exposed mock endpoint path - with request validation enabled - for a SOAP Service.
+func (container *MicrocksContainer) ValidatingSoapMockEndpointPath(ctx context.Context, service string, version string) string {
+	return fmt.Sprintf("/soap/%s/%s?validate=true", service, version)
+}
+
 // RestMockEndpoint get the exposed mock endpoint for a REST Service.
 func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, service string, version string) (string, error) {
 	endpoint, err := container.HttpEndpoint(ctx)
@@ -211,6 +226,21 @@ func (container *MicrocksContainer) RestMockEndpoint(ctx context.Context, servic
 // RestMockEndpointPath get the exposed mock endpoint path for a REST Service.
 func (container *MicrocksContainer) RestMockEndpointPath(ctx context.Context, service string, version string) string {
 	return fmt.Sprintf("/rest/%s/%s", service, version)
+}
+
+// ValidatingRestMockEndpoint get the exposed mock endpoint - with request validation enabled - for a REST Service.
+func (container *MicrocksContainer) ValidatingRestMockEndpoint(ctx context.Context, service string, version string) (string, error) {
+	endpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/rest-valid/%s/%s", endpoint, service, version), nil
+}
+
+// ValidatingRestMockEndpointPath get the exposed mock endpoint path - with request validation enabled - for a REST Service.
+func (container *MicrocksContainer) ValidatingRestMockEndpointPath(ctx context.Context, service string, version string) string {
+	return fmt.Sprintf("/rest-valid/%s/%s", service, version)
 }
 
 // GraphQLMockEndpoint get the exposed mock endpoints for a GraphQL Service.

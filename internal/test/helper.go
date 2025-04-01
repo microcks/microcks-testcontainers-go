@@ -77,6 +77,20 @@ func MockEndpoints(t *testing.T, ctx context.Context, microcksContainer *microck
 	baseApiPath = microcksContainer.GraphQLMockEndpointPath(ctx, "Pastries Graph", "1")
 	require.Equal(t, "/graphql/Pastries Graph/1", baseApiPath)
 
+	validApiUrl, err := microcksContainer.ValidatingSoapMockEndpoint(ctx, "Pastries Service", "1.0")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/soap/Pastries Service/1.0?validate=true", validApiUrl)
+
+	validApiUrl, err = microcksContainer.ValidatingRestMockEndpoint(ctx, "API Pastries", "0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, endpoint+"/rest-valid/API Pastries/0.0.1", validApiUrl)
+
+	validApiPath := microcksContainer.ValidatingSoapMockEndpointPath(ctx, "Pastries Service", "1.0")
+	require.Equal(t, "/soap/Pastries Service/1.0?validate=true", validApiPath)
+
+	validApiPath = microcksContainer.ValidatingRestMockEndpointPath(ctx, "API Pastries", "0.0.1")
+	require.Equal(t, "/rest-valid/API Pastries/0.0.1", validApiPath)
+
 	ip, err := microcksContainer.Host(ctx)
 	require.NoError(t, err)
 
