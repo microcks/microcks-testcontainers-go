@@ -5,7 +5,7 @@ Go library for Testcontainers that enables embedding Microcks into your Go unit 
 Want to see this extension in action? Check out our [sample application](https://github.com/microcks/microcks-testcontainers-go-demo). 🚀
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/microcks/microcks-testcontainers-go/build-verify.yml?logo=github&style=for-the-badge)
-[![License](https://img.shields.io/github/license/microcks/microcks-testcontainers-java?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License](https://img.shields.io/github/license/microcks/microcks-testcontainers-go?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
 ![Go version](https://img.shields.io/github/go-mod/go-version/microcks/microcks-testcontainers-go?style=for-the-badge&logo=go)
 ![GitHub release](https://img.shields.io/github/downloads-pre/microcks/microcks-testcontainers-go/latest/total?style=for-the-badge)
@@ -14,9 +14,9 @@ Want to see this extension in action? Check out our [sample application](https:/
 
 ## Build Status
 
-Latest released version is `v0.3.1`.
+Latest released version is `v0.3.2`.
 
-Current development version is `v0.3.2`.
+Current development version is `v0.3.3`.
 
 #### Fossa license and security scans
 
@@ -41,16 +41,16 @@ To get involved with our community, please make sure you are familiar with the p
 
 ### Include it into your project dependencies
 
-To get the latest version, use go1.22+ and fetch using the `go get` command. For example:
+To get the latest version, use go1.23+ and fetch using the `go get` command. For example:
 
 ```
 go get microcks.io/testcontainers-go@latest
 ```
 
-To get a specific version, use go1.22+ and fetch the desired version using the `go get` command. For example:
+To get a specific version, use go1.23+ and fetch the desired version using the `go get` command. For example:
 
 ```
-go get microcks.io/testcontainers-go@v0.3.1
+go get microcks.io/testcontainers-go@v0.3.2
 ```
 
 ### Startup the container
