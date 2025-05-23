@@ -68,7 +68,7 @@ microcksContainer, err := microcks.Run(ctx, "quay.io/microcks/microcks-uber:nigh
 ### Import content in Microcks
 
 To use Microcks mocks or contract-testing features, you first need to import OpenAPI, Postman Collection, GraphQL or gRPC artifacts. 
-Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-artifacts support](https://microcks.io/documentation/using/importers/#multi-artifacts-support) for details.
+Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-artifacts support](https://microcks.io/documentation/explanations/multi-artifacts) for details.
 
 You can do it before starting the container using simple paths:
 
