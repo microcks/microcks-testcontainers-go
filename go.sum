@@ -325,8 +325,8 @@ github.com/testcontainers/testcontainers-go v0.37.0 h1:L2Qc0vkTw2EHWQ08djon0D2uw
 github.com/testcontainers/testcontainers-go v0.37.0/go.mod h1:QPzbxZhQ6Bclip9igjLFj6z0hs01bU8lrl2dHQmgFGM=
 github.com/testcontainers/testcontainers-go/modules/compose v0.33.0 h1:PyrUOF+zG+xrS3p+FesyVxMI+9U+7pwhZhyFozH3jKY=
 github.com/testcontainers/testcontainers-go/modules/compose v0.33.0/go.mod h1:oqZaUnFEskdZriO51YBquku/jhgzoXHPot6xe1DqKV4=
-github.com/testcontainers/testcontainers-go/modules/kafka v0.36.0 h1:hLCfEjGnoy0Z5taxpjSVzJMKmEamLLes7+MVyYb9B1I=
-github.com/testcontainers/testcontainers-go/modules/kafka v0.36.0/go.mod h1:rrTIX8HBerqX/oeSJ7H6l/E7s0BuMZLcmrCGBzIkp/8=
+github.com/testcontainers/testcontainers-go/modules/kafka v0.37.0 h1:ZkYNKqhqvKm+aZk9C1fxw/fpNNOK+Nm/wHPjmJdN3Ko=
+github.com/testcontainers/testcontainers-go/modules/kafka v0.37.0/go.mod h1:+LvaFfSFW5PMiJTxTQlV6TBpXH1Ktk1h0FTVRZfqSxY=
 github.com/theupdateframework/notary v0.7.0 h1:QyagRZ7wlSpjT5N2qQAh/pN+DVqgekv4DzbAiAiEL3c=
 github.com/theupdateframework/notary v0.7.0/go.mod h1:c9DRxcmhHmVLDay4/2fUYdISnHqbFDGRSlXPO0AhYWw=
 github.com/tilt-dev/fsnotify v1.4.8-0.20220602155310-fff9c274a375 h1:QB54BJwA6x8QU9nHY3xJSZR2kX9bgpZekRKGkLTmEXA=
