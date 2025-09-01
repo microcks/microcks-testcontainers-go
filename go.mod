@@ -9,7 +9,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.37.0
-	golang.org/x/mod v0.25.0
+	golang.org/x/mod v0.27.0
 	microcks.io/go-client v0.3.1
 )
 
