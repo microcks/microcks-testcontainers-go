@@ -1,6 +1,6 @@
 module microcks.io/testcontainers-go
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.10.1
@@ -9,7 +9,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.37.0
-	golang.org/x/mod v0.25.0
+	golang.org/x/mod v0.28.0
 	microcks.io/go-client v0.3.1
 )
 
