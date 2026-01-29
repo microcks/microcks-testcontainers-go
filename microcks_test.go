@@ -16,6 +16,7 @@
 package microcks_test
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"path/filepath"
@@ -34,6 +35,7 @@ func TestMockingFunctionalityAtStartup(t *testing.T) {
 
 	microcksContainer, err := microcks.RunContainer(ctx,
 		testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+		microcks.WithDebugLogLevel(),
 		microcks.WithMainArtifact("testdata/apipastries-openapi.yaml"),
 		microcks.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
 	)
@@ -44,6 +46,18 @@ func TestMockingFunctionalityAtStartup(t *testing.T) {
 		}
 	})
 
+	// Checking DEBUG 1 in logs.
+	readCloser, err := microcksContainer.Logs(ctx)
+	require.NoError(t, err)
+
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(readCloser)
+	require.NoError(t, err)
+	readCloser.Close()
+
+	require.Contains(t, buf.String(), "DEBUG 1", "Expected to find 'DEBUG 1' log line in Microcks logs")
+
+	// Checking mocking functionality.
 	test.ConfigRetrieval(t, ctx, microcksContainer)
 	test.MockEndpoints(t, ctx, microcksContainer)
 

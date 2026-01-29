@@ -1,6 +1,7 @@
 package ensemble_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -109,6 +110,7 @@ func TestAsyncFeatureSetup(t *testing.T) {
 	ec, err := ensemble.RunContainers(
 		ctx,
 		ensemble.WithAsyncFeature(),
+		ensemble.WithDebugLogLevel(),
 		ensemble.WithHostAccessPorts([]int{8080}),
 	)
 	require.NoError(t, err)
@@ -119,6 +121,17 @@ func TestAsyncFeatureSetup(t *testing.T) {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
+
+	// Checking DEBUG [ in logs.
+	readCloser, err := ec.GetAsyncMinionContainer().Logs(ctx)
+	require.NoError(t, err)
+
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(readCloser)
+	require.NoError(t, err)
+	readCloser.Close()
+
+	require.Contains(t, buf.String(), "DEBUG [", "Expected to find 'DEBUG [' log line in Async Minion logs")
 
 	// Tests & assertions.
 	test.ConfigRetrieval(t, ctx, ec.GetMicrocksContainer())

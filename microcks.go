@@ -81,6 +81,12 @@ func Run(ctx context.Context, image string, opts ...testcontainers.ContainerCust
 	return &MicrocksContainer{Container: container}, nil
 }
 
+// WithDebugLogLevel sets Microcks log level to DEBUG.
+// Only useful for debugging purposes.
+func WithDebugLogLevel() testcontainers.CustomizeRequestOption {
+	return WithEnv("LOGGING_LEVEL_IO_GITHUB_MICROCKS", "DEBUG")
+}
+
 // WithMainArtifact provides paths to artifacts that will be imported as main or main
 // ones within the Microcks container.
 // Once it will be started and healthy.

@@ -169,6 +169,16 @@ func RunContainers(ctx context.Context, opts ...Option) (*MicrocksContainersEnse
 	return ensemble, nil
 }
 
+// WithDebugLogLevel sets Microcks and Async Minion log levels to DEBUG.
+func WithDebugLogLevel() Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(microcks.WithDebugLogLevel())
+		e.asyncMinionContainerOptions.Add(async.WithEnv("QUARKUS_LOG_CONSOLE_LEVEL", "DEBUG"))
+		e.asyncMinionContainerOptions.Add(async.WithEnv("QUARKUS_LOG_CATEGORY__IO_GITHUB_MICROCKS__LEVEL", "DEBUG"))
+		return nil
+	}
+}
+
 // WithMicrocksImage helps to use specific Microcks image.
 func WithMicrocksImage(image string) Option {
 	return func(e *MicrocksContainersEnsemble) error {

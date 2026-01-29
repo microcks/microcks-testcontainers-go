@@ -12,6 +12,25 @@ Want to see this extension in action? Check out our [sample application](https:/
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/microcks-uber-image&style=for-the-badge)](https://artifacthub.io/packages/search?repo=microcks-uber-image)
 [![CNCF Landscape](https://img.shields.io/badge/CNCF%20Landscape-5699C6?style=for-the-badge&logo=cncf)](https://landscape.cncf.io/?item=app-definition-and-development--application-definition-image-build--microcks)
 
+### Table of Contents
+
+[Build Status](#build-status)  
+[Community](#community)  
+[How to use it?](#how-to-use-it)  
+- [Include it into your project dependencies](#include-it-into-your-project-dependencies)
+- [Startup the container](#startup-the-container)
+- [Import content in Microcks](#import-content-in-microcks)
+- [Using mock endpoints for your dependencies](#using-mock-endpoints-for-your-dependencies)
+- [Verifying mock endpoint has been invoked](#verifying-mock-endpoint-has-been-invoked)
+- [Launching new contract-tests](#launching-new-contract-tests)
+- [Using authentication Secrets](#using-authentication-secrets)
+- [Advanced features with MicrocksContainersEnsemble](#advanced-features-with-microckscontainersensemble)
+  - [Postman contract-testing](#postman-contract-testing)
+  - [Asynchronous API support](#asynchronous-api-support)
+    - [Using mock endpoints for your dependencies](#using-mock-endpoints-for-your-dependencies-1)
+    - [Launching new contract-tests](#launching-new-contract-tests-1)
+- [Troubleshooting](#troubleshooting)
+
 ## Build Status
 
 Latest released version is `v0.3.2`.
@@ -323,3 +342,19 @@ require.True(t, testResult.Success)
 ```
 
 In addition, you can use the `EventMessagesForTestCase()` function to retrieve the messages exchanged during the test.
+
+### Troubleshooting
+
+You can enable debug logs on the Microcks container by setting the debug log level and then retrieving the logs:
+
+```go
+microcksContainer, err := microcks.Run(ctx, 
+    testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+	microcks.WithDebugLogLevel(),
+    microcks.WithMainArtifact("testdata/apipastries-openapi.yaml"),
+    microcks.WithSecondaryArtifact("testdata/apipastries-postman-collection.json"),
+)
+```
+
+The same `.WithDebugLogLevel()` method is available on also `MicrocksContainersEnsemble` for enabling debug logs 
+on all contained Microcks containers.
