@@ -26,6 +26,7 @@ import (
 	"microcks.io/testcontainers-go/ensemble/async"
 	"microcks.io/testcontainers-go/ensemble/async/connection/amazonservice"
 	"microcks.io/testcontainers-go/ensemble/async/connection/generic"
+	"microcks.io/testcontainers-go/ensemble/async/connection/googlepubsub"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 	"microcks.io/testcontainers-go/ensemble/postman"
 )
@@ -316,6 +317,14 @@ func WithAmazonSQSConnection(connection amazonservice.Connection) Option {
 func WithAmazonSNSConnection(connection amazonservice.Connection) Option {
 	return func(e *MicrocksContainersEnsemble) error {
 		e.asyncMinionContainerOptions.Add(async.WithAmazonSNSConnection(connection))
+		return nil
+	}
+}
+
+// WithGooglePubSubConnection configures a connection to a Google Pub/Sub service.
+func WithGooglePubSubConnection(connection googlepubsub.Connection) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(async.WithGooglePubSubConnection(connection))
 		return nil
 	}
 }

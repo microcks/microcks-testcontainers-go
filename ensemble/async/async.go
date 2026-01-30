@@ -24,6 +24,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"microcks.io/testcontainers-go/ensemble/async/connection/amazonservice"
 	"microcks.io/testcontainers-go/ensemble/async/connection/generic"
+	"microcks.io/testcontainers-go/ensemble/async/connection/googlepubsub"
 	"microcks.io/testcontainers-go/ensemble/async/connection/kafka"
 )
 
@@ -204,6 +205,22 @@ func WithAmazonSNSConnection(connection amazonservice.Connection) testcontainers
 	}
 }
 
+// WithGooglePubSubConnection connects the MicrocksAsyncMinionContainer to a Google Pub/Sub service to allow Google Pub/Sub messages mocking.
+func WithGooglePubSubConnection(connection googlepubsub.Connection) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		if req.Env == nil {
+			req.Env = make(map[string]string)
+		}
+		req.Env["GOOGLEPUBSUB_PROJECT"] = connection.ProjectId
+		if len(connection.EmulatorHost) > 0 {
+			req.Env["PUBSUB_EMULATOR_HOST"] = connection.EmulatorHost
+		}
+		addProtocol(req, "GOOGLEPUBSUB")
+
+		return nil
+	}
+}
+
 // WSMockEndpoint gets the exposed mock endpoints for a WebSocket Service.
 func (container *MicrocksAsyncMinionContainer) WSMockEndpoint(ctx context.Context, service, version, operationName string) (string, error) {
 	// Get the container host.
@@ -295,6 +312,22 @@ func (container *MicrocksAsyncMinionContainer) AmazonSQSMockQueue(service, versi
 // AmazonSNSMockTopic gets the exposed mock topic for an Amazon SNS Service.
 func (container *MicrocksAsyncMinionContainer) AmazonSNSMockTopic(service, version, operationName string) string {
 	return amazonServiceMockDestination(service, version, operationName)
+}
+
+// GooglePubSubMockTopic gets the exposed mock topic for a Google Pub/Sub Service.
+func (container *MicrocksAsyncMinionContainer) GooglePubSubMockTopic(service, version, operationName string) string {
+	// Format operationName.
+	if strings.Index(operationName, " ") != -1 {
+		operationName = strings.Split(operationName, " ")[1]
+	}
+	operationName = strings.ReplaceAll(operationName, "/", "-")
+
+	// Format service and version.
+	r := strings.NewReplacer(" ", "", "-", "")
+	service = r.Replace(service)
+	version = strings.ReplaceAll(version, " ", "")
+
+	return fmt.Sprintf("%s-%s-%s", service, version, operationName)
 }
 
 func amazonServiceMockDestination(service, version, operationName string) string {

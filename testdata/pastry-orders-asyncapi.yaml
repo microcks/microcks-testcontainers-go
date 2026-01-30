@@ -20,6 +20,8 @@ channels:
     bindings:
       ws:
         method: POST
+      googlepubsub:
+        topic: projects/my-project/topics/my-topic
 components:
   messages:
     PastryOrder:
