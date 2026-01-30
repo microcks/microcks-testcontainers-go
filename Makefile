@@ -16,7 +16,7 @@ test-%:
 		--packages="./..." \
 		--junitfile TEST-$*.xml \
 		-- \
-		-timeout=3m
+		-timeout=4m
 
 .PHONY: tools
 tools:

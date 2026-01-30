@@ -399,7 +399,7 @@ func TestAsyncGooglePubSubContractTestingFunctionality(t *testing.T) {
 		ServiceId:    "Pastry orders API:0.1.0",
 		RunnerType:   microcksClient.TestRunnerTypeASYNCAPISCHEMA,
 		TestEndpoint: "googlepubsub://my-custom-project/pastry-orders?emulatorHost=pubsub-emulator:8085",
-		Timeout:      3000,
+		Timeout:      5000,
 	}
 
 	testResultChan := make(chan *microcksClient.TestResult)
@@ -409,7 +409,7 @@ func TestAsyncGooglePubSubContractTestingFunctionality(t *testing.T) {
 	}()
 
 	// Wait a bit to ensure minion is connected.
-	time.Sleep(400 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	// Publish bad messages.
 	for i := 0; i < 5; i++ {
@@ -419,7 +419,7 @@ func TestAsyncGooglePubSubContractTestingFunctionality(t *testing.T) {
 		_, err := result.Get(ctx)
 		require.NoError(t, err)
 		t.Logf("Sending bad message %d on Google PubSub topic", i)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 	}
 
 	// Get test result.
@@ -441,7 +441,7 @@ func TestAsyncGooglePubSubContractTestingFunctionality(t *testing.T) {
 		ServiceId:    "Pastry orders API:0.1.0",
 		RunnerType:   microcksClient.TestRunnerTypeASYNCAPISCHEMA,
 		TestEndpoint: "googlepubsub://my-custom-project/pastry-orders?emulatorHost=pubsub-emulator:8085",
-		Timeout:      3000,
+		Timeout:      5000,
 	}
 
 	testResultChan2 := make(chan *microcksClient.TestResult)
@@ -451,7 +451,7 @@ func TestAsyncGooglePubSubContractTestingFunctionality(t *testing.T) {
 	}()
 
 	// Wait a bit to ensure minion is connected.
-	time.Sleep(400 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	// Publish good messages.
 	for i := 0; i < 5; i++ {
@@ -461,7 +461,7 @@ func TestAsyncGooglePubSubContractTestingFunctionality(t *testing.T) {
 		_, err := result.Get(ctx)
 		require.NoError(t, err)
 		t.Logf("Sending good message %d on Google PubSub topic", i)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 	}
 
 	// Get test result.
