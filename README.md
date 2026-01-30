@@ -33,9 +33,9 @@ Want to see this extension in action? Check out our [sample application](https:/
 
 ## Build Status
 
-Latest released version is `v0.3.2`.
+Latest released version is `v0.3.3`.
 
-Current development version is `v0.3.3`.
+Current development version is `v0.3.4`.
 
 #### Fossa license and security scans
 
