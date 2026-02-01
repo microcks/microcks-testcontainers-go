@@ -11,7 +11,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/gcloud v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0
-	golang.org/x/mod v0.28.0
+	golang.org/x/mod v0.32.0
 	google.golang.org/api v0.247.0
 	google.golang.org/grpc v1.74.2
 	microcks.io/go-client v0.3.1
