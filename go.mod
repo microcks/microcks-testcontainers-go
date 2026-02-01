@@ -1,10 +1,10 @@
 module microcks.io/testcontainers-go
 
-go 1.24.0
+go 1.24.3
 
 require (
 	cloud.google.com/go/pubsub/v2 v2.3.0
-	github.com/confluentinc/confluent-kafka-go/v2 v2.10.1
+	github.com/confluentinc/confluent-kafka-go/v2 v2.13.0
 	github.com/docker/go-connections v0.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/stretchr/testify v1.11.1
