@@ -22,6 +22,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -99,6 +100,45 @@ func WithMainArtifact(artifactFilePath string) testcontainers.CustomizeRequestOp
 // Once it will be started and healthy.
 func WithSecondaryArtifact(artifactFilePath string) testcontainers.CustomizeRequestOption {
 	return WithArtifact(artifactFilePath, false)
+}
+
+// WithSnapshot provides paths to local repository snapshots that will be imported within the Microcks container.
+func WithSnapshot(snapshotFilePath string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				importSnapshotHook(snapshotFilePath),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+		return nil
+	}
+}
+
+// WithMainRemoteArtifact provides urls of remote artifacts that will be imported as primary or main ones within the Microcks container.
+func WithMainRemoteArtifact(remoteArtifactUrl string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				downloadArtifactHook(remoteArtifactUrl, true),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+		return nil
+	}
+}
+
+// WithSecondaryRemoteArtifact provides urls of remote artifacts that will be imported as secondary ones within the Microcks container.
+func WithSecondaryRemoteArtifact(remoteArtifactUrl string) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				downloadArtifactHook(remoteArtifactUrl, false),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+		return nil
+	}
 }
 
 // WithArtifact provides paths to artifacts that will be imported within the Microcks container.
@@ -287,6 +327,21 @@ func (container *MicrocksContainer) ImportAsMainArtifact(ctx context.Context, ar
 // ImportAsSecondaryArtifact imports an artifact as a secondary one within the Microcks container.
 func (container *MicrocksContainer) ImportAsSecondaryArtifact(ctx context.Context, artifactFilePath string) (int, error) {
 	return container.importArtifact(ctx, artifactFilePath, false)
+}
+
+// ImportSnapshot imports a repository snapshot within the Microcks container.
+func (container *MicrocksContainer) ImportSnapshot(ctx context.Context, snapshotFilePath string) (int, error) {
+	return container.importSnapshot(ctx, snapshotFilePath)
+}
+
+// DownloadAsMainArtifact downloads a remote artifact as a primary or main one within the Microcks container.
+func (container *MicrocksContainer) DownloadAsMainArtifact(ctx context.Context, remoteArtifactUrl string) (int, error) {
+	return container.downloadArtifact(ctx, remoteArtifactUrl, true)
+}
+
+// DownloadAsSecondaryArtifact downloads a remote artifact as a secondary one within the Microcks container.
+func (container *MicrocksContainer) DownloadAsSecondaryArtifact(ctx context.Context, remoteArtifactUrl string) (int, error) {
+	return container.downloadArtifact(ctx, remoteArtifactUrl, false)
 }
 
 // TestEndpoint launches a conformance test on an endpoint.
@@ -501,6 +556,105 @@ func (container *MicrocksContainer) importArtifact(ctx context.Context, artifact
 		return 0, err
 	}
 	return response.StatusCode, err
+}
+
+func importSnapshotHook(snapshotFilePath string) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		_, err := microcksContainer.importSnapshot(ctx, snapshotFilePath)
+		return err
+	}
+}
+
+func (container *MicrocksContainer) importSnapshot(ctx context.Context, snapshotFilePath string) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Ensure file exists on fs.
+	file, err := os.Open(snapshotFilePath)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error opening snapshot file: %w", err)
+	}
+	defer file.Close()
+
+	// Create a multipart request body, reading the file.
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(snapshotFilePath))
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error creating multipart form: %w", err)
+	}
+
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error copying file to multipart form: %w", err)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error closing multipart form: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, httpEndpoint+"/api/import", body)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusCreated && response.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		return response.StatusCode, fmt.Errorf("snapshot has not been correctly imported: %s", string(bodyBytes))
+	}
+
+	return response.StatusCode, nil
+}
+
+func downloadArtifactHook(remoteArtifactUrl string, mainArtifact bool) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		_, err := microcksContainer.downloadArtifact(ctx, remoteArtifactUrl, mainArtifact)
+		return err
+	}
+}
+
+func (container *MicrocksContainer) downloadArtifact(ctx context.Context, remoteArtifactUrl string, mainArtifact bool) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	data := url.Values{}
+	data.Set("url", remoteArtifactUrl)
+	data.Set("mainArtifact", strconv.FormatBool(mainArtifact))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, httpEndpoint+"/api/artifact/download", strings.NewReader(data.Encode()))
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusCreated && response.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		return response.StatusCode, fmt.Errorf("artifact has not been correctly downloaded: %s", string(bodyBytes))
+	}
+
+	return response.StatusCode, nil
 }
 
 func createSecretHook(s client.Secret) testcontainers.ContainerHook {
