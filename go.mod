@@ -1,6 +1,6 @@
 module microcks.io/testcontainers-go
 
-go 1.24.0
+go 1.25.0
 
 require (
 	cloud.google.com/go/pubsub/v2 v2.3.0
@@ -11,7 +11,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/gcloud v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0
-	golang.org/x/mod v0.28.0
+	golang.org/x/mod v0.36.0
 	google.golang.org/api v0.247.0
 	google.golang.org/grpc v1.74.2
 	microcks.io/go-client v0.3.1
