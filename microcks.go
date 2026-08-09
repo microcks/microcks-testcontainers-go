@@ -18,6 +18,7 @@ package microcks
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -542,4 +543,124 @@ func encodeOperationName(operationName string) string {
 
 func formatDay(date time.Time) string {
 	return date.Format("20060102")
+}
+
+// WebhookCoordinates identifies a webhook to register: the service it belongs
+// to (as "name:version"), the operation name, and where Microcks should push events.
+type WebhookCoordinates struct {
+	ServiceId     string
+	OperationName string
+	TargetUrl     string
+}
+
+// webhookRegistrationRequest is the body posted to Microcks' /api/webhooks endpoint.
+type webhookRegistrationRequest struct {
+	OperationId         string    `json:"operationId"`
+	TargetUrl           string    `json:"targetUrl"`
+	Frequency           int64     `json:"frequency"`
+	ErrorCountThreshold int       `json:"errorCountThreshold"`
+	ExpiresAt           time.Time `json:"expiresAt"`
+}
+
+// WithWebhookRegistration allows registering one or more webhooks in Microcks,
+// once the container is ready.
+func WithWebhookRegistration(coordinates ...WebhookCoordinates) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				registerWebhooksHook(coordinates),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+
+		return nil
+	}
+}
+
+func registerWebhooksHook(coordinates []WebhookCoordinates) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		for _, wc := range coordinates {
+			if _, err := microcksContainer.registerWebhook(ctx, wc); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func (container *MicrocksContainer) registerWebhook(ctx context.Context, coordinates WebhookCoordinates) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client (used here just for the services lookup).
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Find the correct technical serviceId from the functional "name:version".
+	parts := strings.SplitN(coordinates.ServiceId, ":", 2)
+	if len(parts) != 2 {
+		return http.StatusBadRequest, fmt.Errorf("invalid serviceId format, expected 'name:version', got %q", coordinates.ServiceId)
+	}
+	name, version := parts[0], parts[1]
+
+	// The services endpoint paginates with a default page size of 20, so ask for a larger page.
+	servicesPageSize := 100
+	servicesResp, err := c.GetServicesWithResponse(ctx, &client.GetServicesParams{Size: &servicesPageSize})
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error listing services: %w", err)
+	}
+	if servicesResp.JSON200 == nil {
+		return http.StatusInternalServerError, fmt.Errorf("couldn't retrieve services list from Microcks")
+	}
+
+	var serviceId string
+	for _, s := range *servicesResp.JSON200 {
+		if s.Name == name && s.Version == version {
+			serviceId = *s.Id
+			break
+		}
+	}
+	if serviceId == "" {
+		return http.StatusNotFound, fmt.Errorf("service %s:%s not found in Microcks container", name, version)
+	}
+
+	operationId := serviceId + "-" + coordinates.OperationName
+
+	// NOTE: go-client (v0.3.1) has no generated webhook endpoint yet, so we
+	// call it directly with net/http, same as the Java module does.
+	registrationRequest := webhookRegistrationRequest{
+		OperationId:         operationId,
+		TargetUrl:           coordinates.TargetUrl,
+		Frequency:           3000,                           // ms - webhook events pushed every 3 seconds
+		ErrorCountThreshold: 5,                              // stop after 5 consecutive failures
+		ExpiresAt:           time.Now().Add(48 * time.Hour), // 48-hour registration window
+	}
+
+	body, err := json.Marshal(registrationRequest)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error marshalling webhook registration request: %w", err)
+	}
+
+	resp, err := http.Post(httpEndpoint+"/api/webhooks", "application/json", bytes.NewReader(body))
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error posting webhook registration: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBody, err := io.ReadAll(resp.Body)
+		respBodyStr := string(respBody)
+		if err != nil {
+			return resp.StatusCode, fmt.Errorf("couldn't create webhook registration on Microcks (error reading response: %w)", err)
+		}
+		return resp.StatusCode, fmt.Errorf("couldn't create webhook registration on Microcks: %s", respBodyStr)
+	}
+
+	return resp.StatusCode, nil
 }
