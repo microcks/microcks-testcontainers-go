@@ -7,10 +7,12 @@ require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.10.1
 	github.com/docker/go-connections v0.6.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/rabbitmq/amqp091-go v1.13.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/gcloud v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0
+	github.com/testcontainers/testcontainers-go/modules/rabbitmq v0.40.0
 	golang.org/x/mod v0.38.0
 	google.golang.org/api v0.285.0
 	google.golang.org/grpc v1.83.0

@@ -20,6 +20,12 @@ channels:
     bindings:
       ws:
         method: POST
+      amqp:
+        is: routingKey
+        exchange:
+          type: topic
+          durable: true
+          autoDelete: false
       googlepubsub:
         topic: projects/my-project/topics/my-topic
 components:

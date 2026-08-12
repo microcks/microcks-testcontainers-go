@@ -353,6 +353,14 @@ func WithGooglePubSubConnection(connection googlepubsub.Connection) Option {
 	}
 }
 
+// WithAMQPConnection configures a connection to an AMQP Broker.
+func WithAMQPConnection(connection generic.Connection) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.asyncMinionContainerOptions.Add(async.WithAMQPConnection(connection))
+		return nil
+	}
+}
+
 // WithSecret creates a new secret.
 func WithSecret(s client.Secret) Option {
 	return func(e *MicrocksContainersEnsemble) error {
