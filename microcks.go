@@ -18,7 +18,6 @@ package microcks
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -553,15 +552,6 @@ type WebhookCoordinates struct {
 	TargetUrl     string
 }
 
-// webhookRegistrationRequest is the body posted to Microcks' /api/webhooks endpoint.
-type webhookRegistrationRequest struct {
-	OperationId         string    `json:"operationId"`
-	TargetUrl           string    `json:"targetUrl"`
-	Frequency           int64     `json:"frequency"`
-	ErrorCountThreshold int       `json:"errorCountThreshold"`
-	ExpiresAt           time.Time `json:"expiresAt"`
-}
-
 // WithWebhookRegistration allows registering one or more webhooks in Microcks,
 // once the container is ready.
 func WithWebhookRegistration(coordinates ...WebhookCoordinates) testcontainers.CustomizeRequestOption {
@@ -632,35 +622,21 @@ func (container *MicrocksContainer) registerWebhook(ctx context.Context, coordin
 
 	operationId := serviceId + "-" + coordinates.OperationName
 
-	// NOTE: go-client (v0.3.1) has no generated webhook endpoint yet, so we
-	// call it directly with net/http, same as the Java module does.
-	registrationRequest := webhookRegistrationRequest{
-		OperationId:         operationId,
-		TargetUrl:           coordinates.TargetUrl,
-		Frequency:           3000,                           // ms - webhook events pushed every 3 seconds
-		ErrorCountThreshold: 5,                              // stop after 5 consecutive failures
-		ExpiresAt:           time.Now().Add(48 * time.Hour), // 48-hour registration window
-	}
-
-	body, err := json.Marshal(registrationRequest)
+	// Frequency, ExpiresAt and ErrorCountThreshold are left unset: Microcks applies
+	// its own defaults (3000ms, 2 days and 5 errors).
+	response, err := c.RegisterWebhook(ctx, client.WebhookRegistrationRequest{
+		OperationId: operationId,
+		TargetUrl:   coordinates.TargetUrl,
+	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error marshalling webhook registration request: %w", err)
+		return http.StatusInternalServerError, fmt.Errorf("error registering webhook: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(response.Body)
+		return response.StatusCode, fmt.Errorf("couldn't create webhook registration on Microcks: %s", string(respBody))
 	}
 
-	resp, err := http.Post(httpEndpoint+"/api/webhooks", "application/json", bytes.NewReader(body))
-	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error posting webhook registration: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		respBody, err := io.ReadAll(resp.Body)
-		respBodyStr := string(respBody)
-		if err != nil {
-			return resp.StatusCode, fmt.Errorf("couldn't create webhook registration on Microcks (error reading response: %w)", err)
-		}
-		return resp.StatusCode, fmt.Errorf("couldn't create webhook registration on Microcks: %s", respBodyStr)
-	}
-
-	return resp.StatusCode, nil
+	return response.StatusCode, nil
 }
