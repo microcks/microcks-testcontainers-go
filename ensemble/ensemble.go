@@ -280,6 +280,30 @@ func WithSecondaryArtifact(artifactFilePath string) Option {
 	}
 }
 
+// WithSnapshot provides paths to local repository snapshots that will be imported within the Microcks container.
+func WithSnapshot(snapshotFilePath string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(microcks.WithSnapshot(snapshotFilePath))
+		return nil
+	}
+}
+
+// WithMainRemoteArtifact provides urls of remote artifacts that will be imported as primary or main ones within the Microcks container.
+func WithMainRemoteArtifact(remoteArtifactUrl string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(microcks.WithMainRemoteArtifact(remoteArtifactUrl))
+		return nil
+	}
+}
+
+// WithSecondaryRemoteArtifact provides urls of remote artifacts that will be imported as secondary ones within the Microcks container.
+func WithSecondaryRemoteArtifact(remoteArtifactUrl string) Option {
+	return func(e *MicrocksContainersEnsemble) error {
+		e.microcksContainerOptions.Add(microcks.WithSecondaryRemoteArtifact(remoteArtifactUrl))
+		return nil
+	}
+}
+
 // WithHostAccessPorts helps to open connections between Microcks, Postman or Microcks async
 // to the user's host ports.
 func WithHostAccessPorts(hostAccessPorts []int) Option {
