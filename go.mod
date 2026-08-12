@@ -13,7 +13,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0
 	golang.org/x/mod v0.38.0
 	google.golang.org/api v0.285.0
-	google.golang.org/grpc v1.81.1
+	google.golang.org/grpc v1.83.0
 	microcks.io/go-client v0.3.1
 )
 
