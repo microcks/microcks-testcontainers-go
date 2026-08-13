@@ -204,8 +204,14 @@ func TestWebhookFunctionality(t *testing.T) {
 			TargetUrl:     fmt.Sprintf("http://host.testcontainers.internal:%d", port),
 		}),
 	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		if err := microcksContainer.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
   
-  // Poll for webhook messages (Microcks pushes them every 3s).
+    // Poll for webhook messages (Microcks pushes them every 3s).
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
 		mu.Lock()
