@@ -700,3 +700,100 @@ func encodeOperationName(operationName string) string {
 func formatDay(date time.Time) string {
 	return date.Format("20060102")
 }
+
+// WebhookCoordinates identifies a webhook to register: the service it belongs
+// to (as "name:version"), the operation name, and where Microcks should push events.
+type WebhookCoordinates struct {
+	ServiceId     string
+	OperationName string
+	TargetUrl     string
+}
+
+// WithWebhookRegistration allows registering one or more webhooks in Microcks,
+// once the container is ready.
+func WithWebhookRegistration(coordinates ...WebhookCoordinates) testcontainers.CustomizeRequestOption {
+	return func(req *testcontainers.GenericContainerRequest) error {
+		hooks := testcontainers.ContainerLifecycleHooks{
+			PostReadies: []testcontainers.ContainerHook{
+				registerWebhooksHook(coordinates),
+			},
+		}
+		req.LifecycleHooks = append(req.LifecycleHooks, hooks)
+
+		return nil
+	}
+}
+
+func registerWebhooksHook(coordinates []WebhookCoordinates) testcontainers.ContainerHook {
+	return func(ctx context.Context, container testcontainers.Container) error {
+		microcksContainer := &MicrocksContainer{Container: container}
+		for _, wc := range coordinates {
+			if _, err := microcksContainer.registerWebhook(ctx, wc); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func (container *MicrocksContainer) registerWebhook(ctx context.Context, coordinates WebhookCoordinates) (int, error) {
+	// Retrieve API endpoint.
+	httpEndpoint, err := container.HttpEndpoint(ctx)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error retrieving Microcks API endpoint: %w", err)
+	}
+
+	// Create Microcks client (used here just for the services lookup).
+	c, err := client.NewClientWithResponses(httpEndpoint + "/api")
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error creating Microcks client: %w", err)
+	}
+
+	// Find the correct technical serviceId from the functional "name:version".
+	parts := strings.SplitN(coordinates.ServiceId, ":", 2)
+	if len(parts) != 2 {
+		return http.StatusBadRequest, fmt.Errorf("invalid serviceId format, expected 'name:version', got %q", coordinates.ServiceId)
+	}
+	name, version := parts[0], parts[1]
+
+	// The services endpoint paginates with a default page size of 20, so ask for a larger page.
+	servicesPageSize := 100
+	servicesResp, err := c.GetServicesWithResponse(ctx, &client.GetServicesParams{Size: &servicesPageSize})
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error listing services: %w", err)
+	}
+	if servicesResp.JSON200 == nil {
+		return http.StatusInternalServerError, fmt.Errorf("couldn't retrieve services list from Microcks")
+	}
+
+	var serviceId string
+	for _, s := range *servicesResp.JSON200 {
+		if s.Name == name && s.Version == version {
+			serviceId = *s.Id
+			break
+		}
+	}
+	if serviceId == "" {
+		return http.StatusNotFound, fmt.Errorf("service %s:%s not found in Microcks container", name, version)
+	}
+
+	operationId := serviceId + "-" + coordinates.OperationName
+
+	// Frequency, ExpiresAt and ErrorCountThreshold are left unset: Microcks applies
+	// its own defaults (3000ms, 2 days and 5 errors).
+	response, err := c.RegisterWebhook(ctx, client.WebhookRegistrationRequest{
+		OperationId: operationId,
+		TargetUrl:   coordinates.TargetUrl,
+	})
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error registering webhook: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(response.Body)
+		return response.StatusCode, fmt.Errorf("couldn't create webhook registration on Microcks: %s", string(respBody))
+	}
+
+	return response.StatusCode, nil
+}

@@ -24,6 +24,7 @@ Want to see this extension in action? Check out our [sample application](https:/
 - [Verifying mock endpoint has been invoked](#verifying-mock-endpoint-has-been-invoked)
 - [Launching new contract-tests](#launching-new-contract-tests)
 - [Using authentication Secrets](#using-authentication-secrets)
+- [Registering Webhooks callback endpoints](#registering-webhooks-callback-endpoints)
 - [Advanced features with MicrocksContainersEnsemble](#advanced-features-with-microckscontainersensemble)
   - [Postman contract-testing](#postman-contract-testing)
   - [Asynchronous API support](#asynchronous-api-support)
@@ -223,6 +224,35 @@ testRequest := client.TestRequest{
     Timeout:      2000,
 }
 ```
+
+### Registering Webhooks callback endpoints
+
+> [!NOTE]
+> This feature requires Microcks `1.14.0` or later.
+
+If your application consumes [OpenAPI Webhooks or Callbacks](https://microcks.io/documentation/references/artifacts/openapi-conventions/), you can ask Microcks to
+push mock events to it during your test. Use the `WithWebhookRegistration()` method to register one or more callback
+endpoints at startup:
+
+```go
+microcksContainer, err := microcks.Run(ctx,
+    "quay.io/microcks/microcks-uber:nightly",
+    microcks.WithMainArtifact("testdata/petstore-webhooks-openapi.yaml"),
+    microcks.WithHostAccessPorts([]int{webhookCallbackPort}),
+    microcks.WithWebhookRegistration(microcks.WebhookCoordinates{
+        ServiceId:     "Petstore Webhooks:2.0.0",
+        OperationName: "newPet WEBHOOK",
+        TargetUrl:     fmt.Sprintf("http://host.testcontainers.internal:%d", webhookCallbackPort),
+    }),
+)
+```
+
+`ServiceId` is the functional identifier of your API as `<name>:<version>` and `OperationName` is the name of the
+webhook operation as displayed in Microcks. `webhookCallbackPort` is the port your application listens on for incoming
+callbacks: it must be exposed to the container via `WithHostAccessPorts()` so that Microcks can reach it back through
+the `host.testcontainers.internal` host.
+
+Once registered, Microcks starts pushing mock events to `TargetUrl` every 3 seconds.
 
 ### Advanced features with MicrocksContainersEnsemble
 

@@ -18,9 +18,17 @@ package microcks_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"path/filepath"
+	"strconv"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -166,6 +174,78 @@ func TestContractTestingFunctionality(t *testing.T) {
 	test.PrintMicrocksContainerLogs(t, ctx, microcksContainer)
 }
 
+func TestWebhookFunctionality(t *testing.T) {
+	ctx := context.Background()
+
+	var mu sync.Mutex
+	var received []string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		received = append(received, string(body))
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	// Extract the port from the httptest server so we can expose it to the container.
+	serverURL, err := url.Parse(server.URL)
+	require.NoError(t, err)
+	port, err := strconv.Atoi(serverURL.Port())
+	require.NoError(t, err)
+
+	microcksContainer, err := microcks.Run(ctx, "quay.io/microcks/microcks-uber:nightly",
+		microcks.WithHostAccessPorts([]int{port}),
+		microcks.WithMainArtifact("testdata/petstore-webhooks-openapi.yaml"),
+		microcks.WithWebhookRegistration(microcks.WebhookCoordinates{
+			ServiceId:     "Petstore Webhooks:2.0.0",
+			OperationName: "newPet WEBHOOK",
+			TargetUrl:     fmt.Sprintf("http://host.testcontainers.internal:%d", port),
+		}),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		if err := microcksContainer.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+  
+    // Poll for webhook messages (Microcks pushes them every 3s).
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		mu.Lock()
+		if len(received) > 0 {
+			mu.Unlock()
+			break
+		}
+		mu.Unlock()
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	require.NotEmpty(t, received, "webhook server should have received at least one message")
+
+	// Check the content of every received message matches the 'Rusty' example.
+	for _, msg := range received {
+		var payload struct {
+			Id   int    `json:"id"`
+			Name string `json:"name"`
+			Tag  string `json:"tag"`
+		}
+		err := json.Unmarshal([]byte(msg), &payload)
+		require.NoError(t, err, "received message should be valid JSON")
+
+		require.Equal(t, "Rusty", payload.Name)
+		require.True(t, payload.Id >= 1 && payload.Id <= 10,
+			"id should be a random int between 1 and 10 but was %d", payload.Id)
+		require.Contains(t, []string{"cat", "dog"}, payload.Tag,
+			"tag should be either 'cat' or 'dog' but was %q", payload.Tag)
+	}
+}
+  
 func TestRemoteArtifactDownload(t *testing.T) {
 	ctx := context.Background()
 
@@ -201,8 +281,8 @@ func TestRemoteArtifactDownloadImperative(t *testing.T) {
 			t.Fatalf("failed to terminate container: %s", err)
 		}
 	})
-
-	status, err := microcksContainer.DownloadAsMainArtifact(ctx, "https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml")
+  
+  status, err := microcksContainer.DownloadAsMainArtifact(ctx, "https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusCreated, status)
 
