@@ -34,9 +34,9 @@ Want to see this extension in action? Check out our [sample application](https:/
 
 ## Build Status
 
-Latest released version is `v0.3.3`.
+Latest released version is `v0.4.0`.
 
-Current development version is `v0.3.4`.
+Current development version is `v0.4.1`.
 
 #### Fossa license and security scans
 
@@ -61,16 +61,16 @@ To get involved with our community, please make sure you are familiar with the p
 
 ### Include it into your project dependencies
 
-To get the latest version, use go1.23+ and fetch using the `go get` command. For example:
+To get the latest version, use go1.24+ and fetch using the `go get` command. For example:
 
 ```
 go get microcks.io/testcontainers-go@latest
 ```
 
-To get a specific version, use go1.23+ and fetch the desired version using the `go get` command. For example:
+To get a specific version, use go1.24+ and fetch the desired version using the `go get` command. For example:
 
 ```
-go get microcks.io/testcontainers-go@v0.3.2
+go get microcks.io/testcontainers-go@v0.4.0
 ```
 
 ### Startup the container
