@@ -204,14 +204,8 @@ func TestWebhookFunctionality(t *testing.T) {
 			TargetUrl:     fmt.Sprintf("http://host.testcontainers.internal:%d", port),
 		}),
 	)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		if err := microcksContainer.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate container: %s", err)
-		}
-	})
-
-	// Poll for webhook messages (Microcks pushes them every 3s).
+  
+  // Poll for webhook messages (Microcks pushes them every 3s).
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
 		mu.Lock()
@@ -244,4 +238,55 @@ func TestWebhookFunctionality(t *testing.T) {
 		require.Contains(t, []string{"cat", "dog"}, payload.Tag,
 			"tag should be either 'cat' or 'dog' but was %q", payload.Tag)
 	}
+}
+  
+func TestRemoteArtifactDownload(t *testing.T) {
+	ctx := context.Background()
+
+	microcksContainer, err := microcks.RunContainer(ctx,
+		testcontainers.WithImage("quay.io/microcks/microcks-uber:nightly"),
+		microcks.WithMainRemoteArtifact("https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml"),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		if err := microcksContainer.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+
+	// Check that mock from main/primary remote artifact has been loaded.
+	pastriesUrl, err := microcksContainer.RestMockEndpoint(ctx, "API Pastry - 2.0", "2.0.0")
+	require.NoError(t, err)
+
+	resp, err := http.Get(pastriesUrl + "/pastry/Millefeuille")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestRemoteArtifactDownloadImperative(t *testing.T) {
+	ctx := context.Background()
+
+	microcksContainer, err := microcks.Run(ctx, "quay.io/microcks/microcks-uber:nightly")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		if err := microcksContainer.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+  
+  status, err := microcksContainer.DownloadAsMainArtifact(ctx, "https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, status)
+
+	// Check that mock from main/primary remote artifact has been loaded.
+	pastriesUrl, err := microcksContainer.RestMockEndpoint(ctx, "API Pastry - 2.0", "2.0.0")
+	require.NoError(t, err)
+
+	resp, err := http.Get(pastriesUrl + "/pastry/Millefeuille")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 }

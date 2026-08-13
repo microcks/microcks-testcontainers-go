@@ -122,6 +122,15 @@ if err != nil {
 
 Please refer to our [microcks_test](https://github.com/microcks/microcks-testcontainers-go/blob/main/microcks_test.go) for comprehensive example on how to use it.
 
+You can also import full [repository snapshots](https://microcks.io/documentation/administrating/snapshots/) at once:
+
+```go
+microcksContainer, err := microcks.Run(ctx, 
+    "quay.io/microcks/microcks-uber:nightly",
+    microcks.WithSnapshot("microcks-repository.json"),
+)
+```
+
 ### Using mock endpoints for your dependencies
 
 During your test setup, you'd probably need to retrieve mock endpoints provided by Microcks containers to 
