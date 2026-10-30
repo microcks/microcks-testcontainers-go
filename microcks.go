@@ -697,6 +697,12 @@ func encodeOperationName(operationName string) string {
 	return strings.ReplaceAll(operationName, "/", "!")
 }
 
+// buildWebhookOperationId builds the Microcks webhook operationId:
+// "<serviceId>-<encodedOperationName>".
+func buildWebhookOperationId(serviceId, operationName string) string {
+	return serviceId + "-" + encodeOperationName(operationName)
+}
+
 func formatDay(date time.Time) string {
 	return date.Format("20060102")
 }
@@ -777,7 +783,10 @@ func (container *MicrocksContainer) registerWebhook(ctx context.Context, coordin
 		return http.StatusNotFound, fmt.Errorf("service %s:%s not found in Microcks container", name, version)
 	}
 
-	operationId := serviceId + "-" + coordinates.OperationName
+	// Microcks expects operationId as "<serviceId>-<operationName>" where "/" in
+	// the operation name is encoded as "!" (hyphens are left unchanged). See
+	// microcks/microcks#2343 and encodeOperationName.
+	operationId := buildWebhookOperationId(serviceId, coordinates.OperationName)
 
 	// Frequency, ExpiresAt and ErrorCountThreshold are left unset: Microcks applies
 	// its own defaults (3000ms, 2 days and 5 errors).
