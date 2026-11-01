@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	cloud.google.com/go/pubsub/v2 v2.6.1
-	github.com/confluentinc/confluent-kafka-go/v2 v2.10.1
+	github.com/confluentinc/confluent-kafka-go/v2 v2.15.0
 	github.com/docker/go-connections v0.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/rabbitmq/amqp091-go v1.13.0
@@ -28,11 +28,9 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/Microsoft/hcsshim v0.12.5 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/containerd/containerd v1.7.20 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
