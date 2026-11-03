@@ -777,7 +777,8 @@ func (container *MicrocksContainer) registerWebhook(ctx context.Context, coordin
 		return http.StatusNotFound, fmt.Errorf("service %s:%s not found in Microcks container", name, version)
 	}
 
-	operationId := serviceId + "-" + coordinates.OperationName
+	// Slashes in operation names are encoded as '!' to be safe in URL paths; the first '-' separates service from operation.
+	operationId := serviceId + "-" + encodeOperationName(coordinates.OperationName)
 
 	// Frequency, ExpiresAt and ErrorCountThreshold are left unset: Microcks applies
 	// its own defaults (3000ms, 2 days and 5 errors).
